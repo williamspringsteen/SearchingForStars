@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if( mState == State.Playing)
+        if(mState == State.Playing)
         {
             mNextSpawn -= Time.deltaTime;
             if( mNextSpawn <= 0.0f )
@@ -75,6 +75,7 @@ public class GameManager : MonoBehaviour
         mPlayer.transform.position = new Vector3(0.0f, 0.5f, 0.0f);
         mNextSpawn = TimeBetweenSpawns;
         mPlayer.enabled = true;
+        mPlayer.ResetPlayer();
         mState = State.Playing;
     }
 

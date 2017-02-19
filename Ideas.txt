@@ -8,7 +8,7 @@ Make movement a little more controllable (It is definitely important to stop inf
 
 Collectibles
 
-Score counter
+Score counter that increases every second
 
 Can shoot? (Perhaps from a powerup you get 10 bullets or 10 seconds of shooting)
 

@@ -43,6 +43,7 @@ public class FlockWithGroup : MonoBehaviour
         FlockWithBuddies();
     }
 
+    //Buddy list is every object of the specified group type within BuddyDistance
     private void UpdateBuddyList()
     {
         GroupTag[] individuals = FindObjectsOfType<GroupTag>();
@@ -71,9 +72,18 @@ public class FlockWithGroup : MonoBehaviour
     {
         if (mCurrentBuddies.Count > 0)
         {
+            //align will be the normalised average of your buddies' velocities
+            //(So it is the average direction your buddies are moving in)
             Vector3 align = Vector3.zero;
+            //cohesion is the average coordinates of your buddies, minus your coordinates, then normalised 
+            //(So it is the direction of your buddies' centre of mass from your current position)
             Vector3 cohesion = Vector3.zero; 
+            //avoid is your coordinates, minus the average coordinates of your CLOSE buddies, then normalised
+            //(So it is the opposite of the direction of your CLOSE buddies' centre of mass from your current position)
             Vector3 avoid = Vector3.zero;
+
+            //Required so we can just calculate the average of close buddies
+            int mAvoidBuddiesCount = 0;
             
             for (int count = 0; count < mCurrentBuddies.Count; ++count)
             {
@@ -83,12 +93,13 @@ public class FlockWithGroup : MonoBehaviour
                 if ( ( mCurrentBuddies[count].transform.position - transform.position ).magnitude < AvoidDistance)
                 {
                     avoid += mCurrentBuddies[count].transform.position;
+                    mAvoidBuddiesCount++;
                 }
             }
 
             align /= mCurrentBuddies.Count;
             cohesion /= mCurrentBuddies.Count;
-            avoid /= mCurrentBuddies.Count;
+            avoid /= mAvoidBuddiesCount;
 
             align.Normalize();
             cohesion = cohesion - transform.position;
@@ -96,6 +107,8 @@ public class FlockWithGroup : MonoBehaviour
             avoid = transform.position - avoid;
             avoid.Normalize();
 
+            //Combine the directions found (all of the same order of magnitude: normalised), and then apply force in that direction.
+            //Basically, we want to flock with everyone, and not let the very close buddies take over.
             mBody.AddForce(( align + cohesion + avoid) * Speed * Time.deltaTime);
         }
     }
