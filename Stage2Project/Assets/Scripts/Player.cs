@@ -154,6 +154,7 @@ public class Player : MonoBehaviour
         GUIStyle damageStyle = new GUIStyle();
         damageStyle.alignment = TextAnchor.MiddleCenter;
         damageStyle.fontSize = 18;
+        damageStyle.normal.textColor = Color.white;
 
         GUI.BeginGroup(new Rect(0, BarPos.y, BarPos.x, BarHeight));
             GUI.Label(new Rect(0, 0, BarPos.x, BarHeight), "Damage: ", damageStyle);
@@ -178,6 +179,7 @@ public class Player : MonoBehaviour
 
         GUIStyle scoreStyle = new GUIStyle();
         scoreStyle.fontSize = 18;
+        scoreStyle.normal.textColor = Color.white;
 
         GUI.BeginGroup(new Rect(BarPos.x + 400, BarPos.y, BarWidth + 100, BarHeight));
             GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Score: " + mScore.ToString(), scoreStyle);
