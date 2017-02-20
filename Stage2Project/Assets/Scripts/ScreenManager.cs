@@ -54,7 +54,7 @@ public class ScreenManager : MonoBehaviour
             OnExitGame();
         }
 
-        TransitionTo(Screens.ResultScreen);
+        TransitionTo(Screens.TitleScreen);
     }
 
     private void TransitionTo(Screens screen)

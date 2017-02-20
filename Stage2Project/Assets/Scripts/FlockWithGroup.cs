@@ -100,6 +100,7 @@ public class FlockWithGroup : MonoBehaviour
             align /= mCurrentBuddies.Count;
             cohesion /= mCurrentBuddies.Count;
             avoid /= mAvoidBuddiesCount;
+            //avoid /= mCurrentBuddies.Count;
 
             align.Normalize();
             cohesion = cohesion - transform.position;
@@ -108,7 +109,7 @@ public class FlockWithGroup : MonoBehaviour
             avoid.Normalize();
 
             //Combine the directions found (all of the same order of magnitude: normalised), and then apply force in that direction.
-            //Basically, we want to flock with everyone, and not let the very close buddies take over.
+            //Basically, we want to flock with everyone close enough, specified by buddyDistance, but want space in between, as specified by avoidDistance.
             mBody.AddForce(( align + cohesion + avoid) * Speed * Time.deltaTime);
         }
     }

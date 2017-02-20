@@ -18,6 +18,11 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float TimeBetweenScoreIncrease;
 
+    //Some may last 1 * PowerupTime, others 1.5 * PowerupTime, etc., so this time is relative
+    //(Or may just keep it as 1 * PowerupTime, since a lot of the powerups don't decay)
+    [SerializeField]
+    private float PowerupTime;
+
     private int mNumberCollisions;
 
     private Rigidbody mBody;
@@ -27,6 +32,12 @@ public class Player : MonoBehaviour
     private int mScore;
 
     private float mNextUpdateScore;
+
+    private float mRepellentPlayerTimeLeft;
+
+    private List<MagnetizedByPlayer> mRepellingToAttracting;
+
+    private bool mMassRepel;
 
     //For health bar
     public float BarProgress;
@@ -40,7 +51,9 @@ public class Player : MonoBehaviour
     void Awake()
     {
         mBody = GetComponent<Rigidbody>();
-        
+
+        mRepellingToAttracting = new List<MagnetizedByPlayer>();
+
         ResetPlayer();
 
         BarSize = new Vector2(BarWidth, BarHeight);
@@ -50,7 +63,6 @@ public class Player : MonoBehaviour
         Color32 red = new Color32(255, 0, 0, 255);
         FillTexture(BarEmptyTex, green);
         FillTexture(BarFullTex, red);
-
         
     }
 
@@ -81,25 +93,52 @@ public class Player : MonoBehaviour
             mHealth -= ((1 / Defense) * 10f);
         }
 
-        if (mHealth < InitialHealth && mHealth > 0.5 * InitialHealth)
-        {
-            print("You have been hit!");
-        }
-        else if (mHealth <= 0.5 * InitialHealth && mHealth > 0.2 * InitialHealth)
-        {
-            print("Health is getting low.");
-        }
-        else if (mHealth <= 0.2 * InitialHealth && mHealth > 0)
-        {
-            print("Health is dangerously low!!");
-        }
-        else if (mHealth <= 0)
+        //TODO: Check that this isn't causing lag (due to the actual time having changed when this value would be used)
+        //float timeElapsed = Time.deltaTime;
+
+        //TODO: Maybe do something here, although it messes with the way the screens and buttons work 
+        //Also, we want to make sure this 
+        /*if (IsDead())
         {
             print("You are dead.");
             //gameObject.SetActive(false);
             //gameObject.GetComponent(Player).enabled = false;
             //Player player = gameObject.GetComponent(typeof(Player)) as Player;
             //player.enabled = false;
+        }*/
+
+        if (mRepellentPlayerTimeLeft > 0.0f)
+        {
+            float newTimeLeft = mRepellentPlayerTimeLeft - Time.deltaTime;
+
+            if (mRepellentPlayerTimeLeft == PowerupTime)
+            {
+                //TODO: Would really like to stop more enemies spawning, or ideally make all new enemies repel too.
+                //(Could make an internal function here to check whether timeleft == poweruptime, and an internal function to add new enemies to the list of repellingtoattracting, then access these in gamemanager)
+                MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
+
+                for (int count = 0; count < individuals.Length; ++count)
+                {
+                    MagnetizedByPlayer individual = individuals[count];
+
+                    if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
+                    {
+                        individual.FlipForce();
+                        mRepellingToAttracting.Add(individual);
+                    }
+                }
+            }
+            else if (newTimeLeft < 0.0f)
+            {
+                /* The repellent powerup is about to expire, so make all enemies that should be attracting, attract again. */
+                for (int count = 0; count < mRepellingToAttracting.Count; ++count)
+                {
+                    mRepellingToAttracting[count].FlipForce();
+                }
+                mRepellingToAttracting.Clear();
+            }
+
+            mRepellentPlayerTimeLeft = newTimeLeft;
         }
 
         BarProgress = mHealth * (1 / InitialHealth);
@@ -145,6 +184,41 @@ public class Player : MonoBehaviour
                 Destroy(col.gameObject);
                 mScore += 50;
             }
+            else if (col.gameObject.CompareTag("Powerup"))
+            {
+                //PowerupTag powerup = col.gameObject.GetComponent<PowerupTag>();
+                //PowerupTag.Powerup powerupType = powerup != null ? powerup.Type : PowerupTag.Powerup.Nothing;
+                PowerupTag.Powerup powerupType = col.gameObject.GetComponent<PowerupTag>().Type;
+
+                switch (powerupType)
+                {
+                    case PowerupTag.Powerup.Bomb:
+                        //Increment bomb count 
+                        //(Code to set off bomb still to be written somewhere)
+                        break;
+                    case PowerupTag.Powerup.Bullets:
+                        //
+                        break;
+                    case PowerupTag.Powerup.MassRepel:
+                        //Add a mMassRepelDistance and set this to whatever value
+                        //Add mCloseEnemies (A list, like mRepellingToAttracting)
+                        //Ensure these are initialised and zeroed appropriately (i.e. in ResetPlayer())
+                        //Call MassRepel(), which will:
+                        //Find all Magnetised objects
+                        //Iterate through these objects, adding every one that is not a collectible, and is within mMassRepelDistance magnitude of the player's transform, to mCloseEnemies
+                        //
+                        //
+                        break;
+                    case PowerupTag.Powerup.RepellentPlayer:
+                        mRepellentPlayerTimeLeft = PowerupTime;
+                        break;
+                    case PowerupTag.Powerup.Shield:
+                        break;
+                    default:
+                        break;
+
+                }
+            }
         }
     }
 
@@ -184,6 +258,8 @@ public class Player : MonoBehaviour
         GUI.BeginGroup(new Rect(BarPos.x + 400, BarPos.y, BarWidth + 100, BarHeight));
             GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Score: " + mScore.ToString(), scoreStyle);
         GUI.EndGroup();
+
+        //Maybe_TODO: if (mRepellentPlayerTimeLeft > 0.0f) { display timer below player, based on PowerupTime and current mRepellentPlayerTime }
     }
 
     void FillTexture(Texture2D texture, Color32 colour)
@@ -203,11 +279,15 @@ public class Player : MonoBehaviour
         return mHealth <= 0;
     }
 
+    //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
     internal void ResetPlayer()
     {
+        transform.position = new Vector3(0.0f, 0.5f, 0.0f); //This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
         mHealth = InitialHealth;
         mScore = 0;
         mNumberCollisions = 0;
+        mRepellentPlayerTimeLeft = 0.0f;
+        mRepellingToAttracting.Clear();
+        mMassRepel = false;
     }
-
 }

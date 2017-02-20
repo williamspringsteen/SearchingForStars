@@ -7,7 +7,10 @@ public class GameManager : MonoBehaviour
     public enum State { Paused, Playing }
 
     [SerializeField]
-    private GameObject [] SpawnPrefabs;
+    private GameObject [] SpawnEnemies;
+
+    [SerializeField]
+    private GameObject[] SpawnCollPows;
 
     [SerializeField]
     private Player PlayerPrefab;
@@ -16,12 +19,18 @@ public class GameManager : MonoBehaviour
     private Arena Arena;
 
     [SerializeField]
-    private float TimeBetweenSpawns;
+    private float TimeBetweenEnemySpawns;
 
-    private List<GameObject> mObjects;
+    [SerializeField]
+    private float TimeBetweenCollPowSpawns;
+    
+    //TODO: Split up Collectible and Powerups (Since there is only one collectible, and powerups will disappear, and act a lot differently, so it makes sense)
+    private List<GameObject> mEnemies;
+    private List<GameObject> mCollPows;
     private Player mPlayer;
     private State mState;
-    private float mNextSpawn;
+    private float mNextEnemySpawn;
+    private float mNextCollPowSpawn;
 
     void Awake()
     {
@@ -43,39 +52,64 @@ public class GameManager : MonoBehaviour
     {
         if(mState == State.Playing)
         {
-            mNextSpawn -= Time.deltaTime;
-            if( mNextSpawn <= 0.0f )
+            mNextEnemySpawn -= Time.deltaTime;
+            if( mNextEnemySpawn <= 0.0f )
             {
-                if (mObjects == null)
+                if (mEnemies == null)
                 {
-                    mObjects = new List<GameObject>();
+                    mEnemies = new List<GameObject>();
                 }
 
-                int indexToSpawn = Random.Range(0, SpawnPrefabs.Length);
-                GameObject spawnObject = SpawnPrefabs[indexToSpawn];
-                GameObject spawnedInstance = Instantiate(spawnObject);
-                spawnedInstance.transform.parent = transform;
-                mObjects.Add(spawnedInstance);
-                mNextSpawn = TimeBetweenSpawns;
+                int indexToSpawnEnemy = Random.Range(0, SpawnEnemies.Length);
+                GameObject spawnEnemy = SpawnEnemies[indexToSpawnEnemy];
+                GameObject spawnedEnemyInstance = Instantiate(spawnEnemy);
+                spawnedEnemyInstance.transform.parent = transform;
+                mEnemies.Add(spawnedEnemyInstance);
+                mNextEnemySpawn = TimeBetweenEnemySpawns;
+            }
+
+            mNextCollPowSpawn -= Time.deltaTime;
+            if (mNextCollPowSpawn <= 0.0f)
+            {
+                if (mCollPows == null)
+                {
+                    mCollPows = new List<GameObject>();
+                }
+
+                int indexToSpawnCollPow = Random.Range(0, SpawnCollPows.Length);
+                GameObject spawnCollPow = SpawnCollPows[indexToSpawnCollPow];
+                GameObject spawnedCollPowInstance = Instantiate(spawnCollPow);
+                spawnedCollPowInstance.transform.parent = transform;
+                mCollPows.Add(spawnedCollPowInstance);
+                mNextCollPowSpawn = TimeBetweenCollPowSpawns;
             }
         }
     }
 
     private void BeginNewGame()
     {
-        if (mObjects != null)
+        if (mEnemies != null)
         {
-            for (int count = 0; count < mObjects.Count; ++count)
+            for (int count = 0; count < mEnemies.Count; ++count)
             {
-                Destroy(mObjects[count]);
+                Destroy(mEnemies[count]);
             }
-            mObjects.Clear();
+            mEnemies.Clear();
         }
 
-        mPlayer.transform.position = new Vector3(0.0f, 0.5f, 0.0f);
-        mNextSpawn = TimeBetweenSpawns;
-        mPlayer.enabled = true;
+        if (mCollPows != null)
+        {
+            for (int count = 0; count < mCollPows.Count; ++count)
+            {
+                Destroy(mCollPows[count]);
+            }
+            mCollPows.Clear();
+        }
+
+        mNextEnemySpawn = TimeBetweenEnemySpawns;
+        mNextCollPowSpawn = TimeBetweenCollPowSpawns;
         mPlayer.ResetPlayer();
+        mPlayer.enabled = true;
         mState = State.Playing;
     }
 
@@ -83,6 +117,26 @@ public class GameManager : MonoBehaviour
     {
         mPlayer.enabled = false;
         mState = State.Paused;
+
+        if (mEnemies != null)
+        {
+            for (int count = 0; count < mEnemies.Count; ++count)
+            {
+                Destroy(mEnemies[count]);
+            }
+            mEnemies.Clear();
+        }
+
+        if (mCollPows != null)
+        {
+            for (int count = 0; count < mCollPows.Count; ++count)
+            {
+                Destroy(mCollPows[count]);
+            }
+            mCollPows.Clear();
+        }
+
+        mPlayer.ResetPlayer();
     }
 
     private void ScreenManager_OnNewGame()
@@ -93,5 +147,10 @@ public class GameManager : MonoBehaviour
     private void ScreenManager_OnExitGame()
     {
         EndGame();
+    }
+
+    internal void DelayEnemies(float delayTime)
+    {
+        mNextEnemySpawn += delayTime;
     }
 }

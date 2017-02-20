@@ -19,6 +19,8 @@ public class MagnetizedByPlayer : MonoBehaviour
     private Player mPlayer;
     private Rigidbody mBody;
 
+    public Type ForceType { get { return MagnetizeType; } }
+
     void Awake()
     {
         mPlayer = FindObjectOfType<Player>();
@@ -36,4 +38,16 @@ public class MagnetizedByPlayer : MonoBehaviour
             }
         }		
 	}
+
+    internal void FlipForce()
+    {
+        if (MagnetizeType == Type.Repel)
+        {
+            MagnetizeType = Type.Attract;
+        }
+        else
+        {
+            MagnetizeType = Type.Repel;
+        }
+    }
 }
