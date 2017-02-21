@@ -289,5 +289,7 @@ public class Player : MonoBehaviour
         mRepellentPlayerTimeLeft = 0.0f;
         mRepellingToAttracting.Clear();
         mMassRepel = false;
+        //TODO: Set player velocity to 0.
+        mBody.velocity = Vector3.zero;
     }
 }
