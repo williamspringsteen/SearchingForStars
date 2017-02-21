@@ -52,6 +52,12 @@ public class GameManager : MonoBehaviour
     {
         if(mState == State.Playing)
         {
+            //Stop new enemies spawning while repellent powerup is in effect.
+            //It is multiplied by 1.1f so that a new enemy doesn't just instantly spawn after powerup expires.
+            if (mPlayer.HasJustGotRepelPowerup())
+            {
+                mNextEnemySpawn += mPlayer.GetPowerupTime() * 1.1f;
+            }
             mNextEnemySpawn -= Time.deltaTime;
             if( mNextEnemySpawn <= 0.0f )
             {

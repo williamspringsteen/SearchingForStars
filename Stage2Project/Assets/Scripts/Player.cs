@@ -93,9 +93,6 @@ public class Player : MonoBehaviour
             mHealth -= ((1 / Defense) * 10f);
         }
 
-        //TODO: Check that this isn't causing lag (due to the actual time having changed when this value would be used)
-        //float timeElapsed = Time.deltaTime;
-
         //TODO: Maybe do something here, although it messes with the way the screens and buttons work 
         //Also, we want to make sure this 
         /*if (IsDead())
@@ -111,10 +108,8 @@ public class Player : MonoBehaviour
         {
             float newTimeLeft = mRepellentPlayerTimeLeft - Time.deltaTime;
 
-            if (mRepellentPlayerTimeLeft == PowerupTime)
+            if (HasJustGotRepelPowerup())
             {
-                //TODO: Would really like to stop more enemies spawning, or ideally make all new enemies repel too.
-                //(Could make an internal function here to check whether timeleft == poweruptime, and an internal function to add new enemies to the list of repellingtoattracting, then access these in gamemanager)
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
 
                 for (int count = 0; count < individuals.Length; ++count)
@@ -186,8 +181,6 @@ public class Player : MonoBehaviour
             }
             else if (col.gameObject.CompareTag("Powerup"))
             {
-                //PowerupTag powerup = col.gameObject.GetComponent<PowerupTag>();
-                //PowerupTag.Powerup powerupType = powerup != null ? powerup.Type : PowerupTag.Powerup.Nothing;
                 PowerupTag.Powerup powerupType = col.gameObject.GetComponent<PowerupTag>().Type;
 
                 switch (powerupType)
@@ -277,6 +270,16 @@ public class Player : MonoBehaviour
     internal bool IsDead()
     {
         return mHealth <= 0;
+    }
+
+    internal bool HasJustGotRepelPowerup()
+    {
+        return (mRepellentPlayerTimeLeft == PowerupTime);
+    }
+
+    internal float GetPowerupTime()
+    {
+        return PowerupTime;
     }
 
     //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
