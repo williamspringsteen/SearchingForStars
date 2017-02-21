@@ -18,6 +18,9 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float TimeBetweenScoreIncrease;
 
+    //[SerializeField]
+    //private float mMassRepelDistance = 40.0f;
+
     //Some may last 1 * PowerupTime, others 1.5 * PowerupTime, etc., so this time is relative
     //(Or may just keep it as 1 * PowerupTime, since a lot of the powerups don't decay)
     [SerializeField]
@@ -37,7 +40,9 @@ public class Player : MonoBehaviour
 
     private List<MagnetizedByPlayer> mRepellingToAttracting;
 
-    private bool mMassRepel;
+    //private List<MagnetizedByPlayer> mMassRepelEnemies;
+
+    //private bool mMassRepelling;
 
     //For health bar
     public float BarProgress;
@@ -53,6 +58,8 @@ public class Player : MonoBehaviour
         mBody = GetComponent<Rigidbody>();
 
         mRepellingToAttracting = new List<MagnetizedByPlayer>();
+
+        //mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
         ResetPlayer();
 
@@ -135,6 +142,16 @@ public class Player : MonoBehaviour
 
             mRepellentPlayerTimeLeft = newTimeLeft;
         }
+        /*else if (mMassRepelling)
+        {
+            for (int count = 0; count < mMassRepelEnemies.Count; ++count)
+            {
+                mMassRepelEnemies[count].FlipForce();
+                mMassRepelEnemies[count].RevertMassRepelForce();
+            }
+            mMassRepelEnemies.Clear();
+            mMassRepelling = false;
+        }*/
 
         BarProgress = mHealth * (1 / InitialHealth);
 
@@ -193,14 +210,8 @@ public class Player : MonoBehaviour
                         //
                         break;
                     case PowerupTag.Powerup.MassRepel:
-                        //Add a mMassRepelDistance and set this to whatever value
-                        //Add mCloseEnemies (A list, like mRepellingToAttracting)
-                        //Ensure these are initialised and zeroed appropriately (i.e. in ResetPlayer())
-                        //Call MassRepel(), which will:
-                        //Find all Magnetised objects
-                        //Iterate through these objects, adding every one that is not a collectible, and is within mMassRepelDistance magnitude of the player's transform, to mCloseEnemies
-                        //
-                        //
+                        //print("Triggered");
+                        //MassRepel();
                         break;
                     case PowerupTag.Powerup.RepellentPlayer:
                         mRepellentPlayerTimeLeft = PowerupTime;
@@ -282,6 +293,34 @@ public class Player : MonoBehaviour
         return PowerupTime;
     }
 
+    /*private void MassRepel()
+    {
+        
+        if (!mMassRepelling)
+        {
+            print("Successful MassRepel()");
+            mMassRepelling = true;
+
+            MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
+
+            for (int count = 0; count < individuals.Length; ++count)
+            {
+                MagnetizedByPlayer individual = individuals[count];
+
+                if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
+                {
+                    Vector3 difference = individuals[count].transform.position - transform.position;
+                    if (difference.magnitude <= mMassRepelDistance)
+                    {
+                        individual.FlipForce();
+                        individual.SetMassRepelForce();
+                        mMassRepelEnemies.Add(individual);
+                    }
+                }
+            }
+        }
+    }*/
+
     //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
     internal void ResetPlayer()
     {
@@ -291,8 +330,9 @@ public class Player : MonoBehaviour
         mNumberCollisions = 0;
         mRepellentPlayerTimeLeft = 0.0f;
         mRepellingToAttracting.Clear();
-        mMassRepel = false;
-        //TODO: Set player velocity to 0.
+        //mMassRepelEnemies.Clear();
+        //mMassRepelling = false;
         mBody.velocity = Vector3.zero;
     }
 }
+
