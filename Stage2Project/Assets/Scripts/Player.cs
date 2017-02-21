@@ -18,13 +18,15 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float TimeBetweenScoreIncrease;
 
-    //[SerializeField]
-    //private float mMassRepelDistance = 40.0f;
+    [SerializeField]
+    private float MassRepelDistance = 40.0f;
 
     //Some may last 1 * PowerupTime, others 1.5 * PowerupTime, etc., so this time is relative
     //(Or may just keep it as 1 * PowerupTime, since a lot of the powerups don't decay)
     [SerializeField]
-    private float PowerupTime;
+    private float PowerupTime = 10.0f;
+
+    private float mMassRepelPowerupTime;
 
     private int mNumberCollisions;
 
@@ -38,9 +40,13 @@ public class Player : MonoBehaviour
 
     private float mRepellentPlayerTimeLeft;
 
+    private float mMassRepelTimeLeft;
+
+    private float mMassRepelCooldown;
+
     private List<MagnetizedByPlayer> mRepellingToAttracting;
 
-    //private List<MagnetizedByPlayer> mMassRepelEnemies;
+    private List<MagnetizedByPlayer> mMassRepelEnemies;
 
     //private bool mMassRepelling;
 
@@ -59,7 +65,9 @@ public class Player : MonoBehaviour
 
         mRepellingToAttracting = new List<MagnetizedByPlayer>();
 
-        //mMassRepelEnemies = new List<MagnetizedByPlayer>();
+        mMassRepelEnemies = new List<MagnetizedByPlayer>();
+
+        mMassRepelPowerupTime = PowerupTime / 100.0f;
 
         ResetPlayer();
 
@@ -142,16 +150,49 @@ public class Player : MonoBehaviour
 
             mRepellentPlayerTimeLeft = newTimeLeft;
         }
-        /*else if (mMassRepelling)
+        else if (mMassRepelTimeLeft > 0.0f)
         {
-            for (int count = 0; count < mMassRepelEnemies.Count; ++count)
+            float newTimeLeft = mMassRepelTimeLeft - Time.deltaTime;
+
+            if (HasJustGotMassRepelPowerup())
             {
-                mMassRepelEnemies[count].FlipForce();
-                mMassRepelEnemies[count].RevertMassRepelForce();
+                mMassRepelTimeLeft = mMassRepelPowerupTime;
+
+
+                MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
+
+                for (int count = 0; count < individuals.Length; ++count)
+                {
+                    MagnetizedByPlayer individual = individuals[count];
+
+                    if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
+                    {
+                        Vector3 difference = individuals[count].transform.position - transform.position;
+                        if (difference.magnitude <= MassRepelDistance)
+                        {
+                            individual.FlipForce();
+                            individual.SetMassRepelForce();
+                            individual.SetMassRepelDistance();
+                            mMassRepelEnemies.Add(individual);
+                        }
+                    }
+                }
             }
-            mMassRepelEnemies.Clear();
-            mMassRepelling = false;
-        }*/
+            else if (newTimeLeft < 0.0f)
+            {
+                for (int count = 0; count < mMassRepelEnemies.Count; ++count)
+                {
+                    mMassRepelEnemies[count].FlipForce();
+                    mMassRepelEnemies[count].RevertMassRepelForce();
+                    mMassRepelEnemies[count].RevertMassRepelDistance();
+                }
+                mMassRepelEnemies.Clear();
+            }
+
+            mMassRepelTimeLeft = newTimeLeft;
+        }
+
+        mMassRepelCooldown -= Time.deltaTime;
 
         BarProgress = mHealth * (1 / InitialHealth);
 
@@ -212,6 +253,11 @@ public class Player : MonoBehaviour
                     case PowerupTag.Powerup.MassRepel:
                         //print("Triggered");
                         //MassRepel();
+                        if (mMassRepelCooldown < 0.0f)
+                        {
+                            mMassRepelCooldown = 4.0f;
+                            mMassRepelTimeLeft = mMassRepelPowerupTime;
+                        }
                         break;
                     case PowerupTag.Powerup.RepellentPlayer:
                         mRepellentPlayerTimeLeft = PowerupTime;
@@ -288,38 +334,15 @@ public class Player : MonoBehaviour
         return (mRepellentPlayerTimeLeft == PowerupTime);
     }
 
+    private bool HasJustGotMassRepelPowerup()
+    {
+        return (mMassRepelTimeLeft == mMassRepelPowerupTime);
+    }
+
     internal float GetPowerupTime()
     {
         return PowerupTime;
     }
-
-    /*private void MassRepel()
-    {
-        
-        if (!mMassRepelling)
-        {
-            print("Successful MassRepel()");
-            mMassRepelling = true;
-
-            MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
-
-            for (int count = 0; count < individuals.Length; ++count)
-            {
-                MagnetizedByPlayer individual = individuals[count];
-
-                if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
-                {
-                    Vector3 difference = individuals[count].transform.position - transform.position;
-                    if (difference.magnitude <= mMassRepelDistance)
-                    {
-                        individual.FlipForce();
-                        individual.SetMassRepelForce();
-                        mMassRepelEnemies.Add(individual);
-                    }
-                }
-            }
-        }
-    }*/
 
     //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
     internal void ResetPlayer()
@@ -330,9 +353,9 @@ public class Player : MonoBehaviour
         mNumberCollisions = 0;
         mRepellentPlayerTimeLeft = 0.0f;
         mRepellingToAttracting.Clear();
-        //mMassRepelEnemies.Clear();
-        //mMassRepelling = false;
+        mMassRepelEnemies.Clear();
         mBody.velocity = Vector3.zero;
+        mMassRepelCooldown = 0.0f;
     }
 }
 

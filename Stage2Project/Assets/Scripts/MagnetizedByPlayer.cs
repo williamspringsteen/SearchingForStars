@@ -72,11 +72,11 @@ public class MagnetizedByPlayer : MonoBehaviour
 
     internal void SetMassRepelDistance()
     {
-        MinimumDistance = ;
+        MinimumDistance = mMassRepelDistance;
     }
 
     internal void RevertMassRepelDistance()
     {
-        RepelForce = mInitialRepelForce;
+        MinimumDistance = mInitialMinimumDistance;
     }
 }
