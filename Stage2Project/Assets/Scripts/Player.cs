@@ -63,7 +63,7 @@ public class Player : MonoBehaviour
 
     private int mBullets;
 
-    private float mPickupCooldown = 3.0f;
+    private float mPickupCooldown = 5.0f;
 
     private float mPickupCooldownTimeLeft;
 
