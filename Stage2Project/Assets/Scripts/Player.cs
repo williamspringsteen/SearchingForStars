@@ -48,8 +48,6 @@ public class Player : MonoBehaviour
 
     private List<MagnetizedByPlayer> mMassRepelEnemies;
 
-    //private bool mMassRepelling;
-
     //For health bar
     public float BarProgress;
     public Vector2 BarPos = new Vector2(200, 40);
@@ -67,7 +65,8 @@ public class Player : MonoBehaviour
 
         mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
-        mMassRepelPowerupTime = PowerupTime / 100.0f;
+        //mMassRepelPowerupTime = PowerupTime / 100.0f;
+        mMassRepelPowerupTime = 0.4f;
 
         ResetPlayer();
 
@@ -133,7 +132,8 @@ public class Player : MonoBehaviour
 
                     if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
                     {
-                        individual.FlipForce();
+                        //individual.FlipForce();
+                        individual.MakeRepelling();
                         mRepellingToAttracting.Add(individual);
                     }
                 }
@@ -143,7 +143,8 @@ public class Player : MonoBehaviour
                 /* The repellent powerup is about to expire, so make all enemies that should be attracting, attract again. */
                 for (int count = 0; count < mRepellingToAttracting.Count; ++count)
                 {
-                    mRepellingToAttracting[count].FlipForce();
+                    //mRepellingToAttracting[count].FlipForce();
+                    mRepellingToAttracting[count].RevertMagnetizeType();
                 }
                 mRepellingToAttracting.Clear();
             }
@@ -153,10 +154,10 @@ public class Player : MonoBehaviour
         else if (mMassRepelTimeLeft > 0.0f)
         {
             float newTimeLeft = mMassRepelTimeLeft - Time.deltaTime;
-
+            print("Time.deltaTime = " + Time.deltaTime + ". mMassRepelPowerupTime = " + mMassRepelPowerupTime + ", newTimeLeft = " + newTimeLeft + " (initially, this should be newTimeLeft - mMassRepelPowerupTime. If newTimeLeft < 0, we have a problem)");
             if (HasJustGotMassRepelPowerup())
             {
-                mMassRepelTimeLeft = mMassRepelPowerupTime;
+                //mMassRepelTimeLeft = mMassRepelPowerupTime;   //Not sure why this was here, 99% sure it can be removed
 
 
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
@@ -165,24 +166,28 @@ public class Player : MonoBehaviour
                 {
                     MagnetizedByPlayer individual = individuals[count];
 
-                    if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
+                    if (!individual.CompareTag("Collectible") /*&& individual.ForceType == MagnetizedByPlayer.Type.Attract*/)
                     {
                         Vector3 difference = individuals[count].transform.position - transform.position;
                         if (difference.magnitude <= MassRepelDistance)
                         {
-                            individual.FlipForce();
+                            //individual.FlipForce();
+                            individual.MakeRepelling();
                             individual.SetMassRepelForce();
                             individual.SetMassRepelDistance();
                             mMassRepelEnemies.Add(individual);
                         }
                     }
                 }
+                print("MassRepelling " + mMassRepelEnemies.Count);
             }
             else if (newTimeLeft < 0.0f)
             {
+                print("Un-MassRepelling " + mMassRepelEnemies.Count);
                 for (int count = 0; count < mMassRepelEnemies.Count; ++count)
                 {
-                    mMassRepelEnemies[count].FlipForce();
+                    //mMassRepelEnemies[count].FlipForce();
+                    mMassRepelEnemies[count].RevertMagnetizeType();
                     mMassRepelEnemies[count].RevertMassRepelForce();
                     mMassRepelEnemies[count].RevertMassRepelDistance();
                 }
@@ -251,10 +256,11 @@ public class Player : MonoBehaviour
                         //
                         break;
                     case PowerupTag.Powerup.MassRepel:
-                        //print("Triggered");
+                        print("Triggered");
                         //MassRepel();
                         if (mMassRepelCooldown < 0.0f)
                         {
+                            print("Successful trigger");
                             mMassRepelCooldown = 4.0f;
                             mMassRepelTimeLeft = mMassRepelPowerupTime;
                         }

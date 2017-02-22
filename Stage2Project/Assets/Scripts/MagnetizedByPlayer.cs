@@ -17,12 +17,13 @@ public class MagnetizedByPlayer : MonoBehaviour
     private Type MagnetizeType = Type.Repel;
 
     [SerializeField]
-    private float MassRepelForce = 2000.0f;
+    private float MassRepelForce = 1000.0f;
 
-    private float mMassRepelDistance = 300.0f;
+    private float mMassRepelDistance = 3000.0f;
 
     private Player mPlayer;
     private Rigidbody mBody;
+    private Type mInitialMagnetizeType;
     private float mInitialRepelForce;
     private float mInitialMinimumDistance;
 
@@ -32,6 +33,7 @@ public class MagnetizedByPlayer : MonoBehaviour
     {
         mPlayer = FindObjectOfType<Player>();
         mBody = GetComponent<Rigidbody>();
+        mInitialMagnetizeType = MagnetizeType;
         mInitialRepelForce = RepelForce;
         mInitialMinimumDistance = MinimumDistance;
     }
@@ -58,6 +60,17 @@ public class MagnetizedByPlayer : MonoBehaviour
         {
             MagnetizeType = Type.Repel;
         }
+    }
+
+    internal void MakeRepelling()
+    {
+        mBody.velocity = Vector3.zero;
+        MagnetizeType = Type.Repel;
+    }
+
+    internal void RevertMagnetizeType()
+    {
+        MagnetizeType = mInitialMagnetizeType;
     }
 
     internal void SetMassRepelForce()
