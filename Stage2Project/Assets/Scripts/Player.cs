@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+//TODO: Will probably have to change ParticleSystem to be some kind of ring around player, maybe a different asset
+
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(ParticleSystem))]
 public class Player : MonoBehaviour
 {
     [SerializeField]
@@ -48,6 +51,22 @@ public class Player : MonoBehaviour
 
     private List<MagnetizedByPlayer> mMassRepelEnemies;
 
+    private bool mShieldUp;
+
+    private float mShieldImmunityTimeLeft;
+
+    private float mShieldDownImmunityTime = 2.0f; //TODO: Change to 1? Maybe make serializable?
+
+    private ParticleSystem.EmissionModule mShield;
+
+    private int mBombs;
+
+    private int mBullets;
+
+    private float mPickupCooldown = 3.0f;
+
+    private float mPickupCooldownTimeLeft;
+
     //For health bar
     public float BarProgress;
     public Vector2 BarPos = new Vector2(200, 40);
@@ -61,12 +80,14 @@ public class Player : MonoBehaviour
     {
         mBody = GetComponent<Rigidbody>();
 
+        mShield = GetComponent<ParticleSystem>().emission;
+
         mRepellingToAttracting = new List<MagnetizedByPlayer>();
 
         mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
-        //mMassRepelPowerupTime = PowerupTime / 100.0f;
-        mMassRepelPowerupTime = 0.4f;
+        mMassRepelPowerupTime = PowerupTime / 30.0f;
+        //mMassRepelPowerupTime = 0.4f;
 
         ResetPlayer();
 
@@ -102,7 +123,7 @@ public class Player : MonoBehaviour
             direction += -Vector3.forward;
         }
 
-        if (mNumberCollisions > 0 && !IsDead())
+        if (mNumberCollisions > 0 && !IsDead() && mShieldImmunityTimeLeft <= 0.0f && !mShieldUp)
         {
             mHealth -= ((1 / Defense) * 10f);
         }
@@ -132,7 +153,7 @@ public class Player : MonoBehaviour
 
                     if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
                     {
-                        //individual.FlipForce();
+            
                         individual.MakeRepelling();
                         mRepellingToAttracting.Add(individual);
                     }
@@ -143,7 +164,7 @@ public class Player : MonoBehaviour
                 /* The repellent powerup is about to expire, so make all enemies that should be attracting, attract again. */
                 for (int count = 0; count < mRepellingToAttracting.Count; ++count)
                 {
-                    //mRepellingToAttracting[count].FlipForce();
+            
                     mRepellingToAttracting[count].RevertMagnetizeType();
                 }
                 mRepellingToAttracting.Clear();
@@ -154,24 +175,20 @@ public class Player : MonoBehaviour
         else if (mMassRepelTimeLeft > 0.0f)
         {
             float newTimeLeft = mMassRepelTimeLeft - Time.deltaTime;
-            print("Time.deltaTime = " + Time.deltaTime + ". mMassRepelPowerupTime = " + mMassRepelPowerupTime + ", newTimeLeft = " + newTimeLeft + " (initially, this should be newTimeLeft - mMassRepelPowerupTime. If newTimeLeft < 0, we have a problem)");
+
             if (HasJustGotMassRepelPowerup())
             {
-                //mMassRepelTimeLeft = mMassRepelPowerupTime;   //Not sure why this was here, 99% sure it can be removed
-
-
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
 
                 for (int count = 0; count < individuals.Length; ++count)
                 {
                     MagnetizedByPlayer individual = individuals[count];
 
-                    if (!individual.CompareTag("Collectible") /*&& individual.ForceType == MagnetizedByPlayer.Type.Attract*/)
+                    if (!individual.CompareTag("Collectible"))
                     {
                         Vector3 difference = individuals[count].transform.position - transform.position;
                         if (difference.magnitude <= MassRepelDistance)
                         {
-                            //individual.FlipForce();
                             individual.MakeRepelling();
                             individual.SetMassRepelForce();
                             individual.SetMassRepelDistance();
@@ -179,14 +196,11 @@ public class Player : MonoBehaviour
                         }
                     }
                 }
-                print("MassRepelling " + mMassRepelEnemies.Count);
             }
             else if (newTimeLeft < 0.0f)
             {
-                print("Un-MassRepelling " + mMassRepelEnemies.Count);
                 for (int count = 0; count < mMassRepelEnemies.Count; ++count)
                 {
-                    //mMassRepelEnemies[count].FlipForce();
                     mMassRepelEnemies[count].RevertMagnetizeType();
                     mMassRepelEnemies[count].RevertMassRepelForce();
                     mMassRepelEnemies[count].RevertMassRepelDistance();
@@ -198,6 +212,16 @@ public class Player : MonoBehaviour
         }
 
         mMassRepelCooldown -= Time.deltaTime;
+
+        if (mShieldImmunityTimeLeft > 0.0f)
+        {
+            mShieldImmunityTimeLeft -= Time.deltaTime;
+        }
+
+        if (mPickupCooldownTimeLeft > 0.0f)
+        {
+            mPickupCooldownTimeLeft -= Time.deltaTime;
+        }
 
         BarProgress = mHealth * (1 / InitialHealth);
 
@@ -222,6 +246,12 @@ public class Player : MonoBehaviour
         if (col.gameObject.CompareTag("Enemy"))
         {
             mNumberCollisions++;
+            if (mShieldUp)
+            {
+                mShieldUp = false;
+                mShield.enabled = false;
+                mShieldImmunityTimeLeft = mShieldDownImmunityTime;
+            }
         }
     }
 
@@ -251,24 +281,36 @@ public class Player : MonoBehaviour
                     case PowerupTag.Powerup.Bomb:
                         //Increment bomb count 
                         //(Code to set off bomb still to be written somewhere)
+                        if (mPickupCooldownTimeLeft <= 0.0f)
+                        {
+                            mBombs++;
+                            mPickupCooldownTimeLeft = mPickupCooldown;
+                        }
                         break;
                     case PowerupTag.Powerup.Bullets:
                         //
+                        if (mPickupCooldownTimeLeft <= 0.0f)
+                        {
+                            mBullets++;
+                            mPickupCooldownTimeLeft = mPickupCooldown;
+                        }
                         break;
                     case PowerupTag.Powerup.MassRepel:
-                        print("Triggered");
-                        //MassRepel();
-                        if (mMassRepelCooldown < 0.0f)
+                        if (mMassRepelCooldown <= 0.0f && mRepellentPlayerTimeLeft <= 0.0f)
                         {
-                            print("Successful trigger");
-                            mMassRepelCooldown = 4.0f;
+                            mMassRepelCooldown = mMassRepelPowerupTime * 6;
                             mMassRepelTimeLeft = mMassRepelPowerupTime;
                         }
                         break;
                     case PowerupTag.Powerup.RepellentPlayer:
-                        mRepellentPlayerTimeLeft = PowerupTime;
+                        if (mMassRepelTimeLeft <= 0.0f)
+                        {
+                            mRepellentPlayerTimeLeft = PowerupTime;
+                        }
                         break;
                     case PowerupTag.Powerup.Shield:
+                        mShieldUp = true;
+                        mShield.enabled = true;
                         break;
                     default:
                         break;
@@ -362,6 +404,13 @@ public class Player : MonoBehaviour
         mMassRepelEnemies.Clear();
         mBody.velocity = Vector3.zero;
         mMassRepelCooldown = 0.0f;
+        mMassRepelTimeLeft = 0.0f;
+        mShieldImmunityTimeLeft = 0.0f;
+        mShieldUp = false;
+        mShield.enabled = false;
+        mBombs = 0;
+        mBullets = 0;
+        mPickupCooldownTimeLeft = 0.0f;
     }
 }
 
