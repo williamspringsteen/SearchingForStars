@@ -29,6 +29,9 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float PowerupTime = 10.0f;
 
+    [SerializeField]
+    private float BombRadius = 30.0f;
+
     private float mMassRepelPowerupTime;
 
     private int mNumberCollisions;
@@ -65,7 +68,9 @@ public class Player : MonoBehaviour
 
     private float mPickupCooldown = 5.0f;
 
-    private float mPickupCooldownTimeLeft;
+    private float mPickupCooldownTimeLeft;    
+
+    private bool mUseBomb = false;
 
     //For health bar
     public float BarProgress;
@@ -121,6 +126,16 @@ public class Player : MonoBehaviour
         else if (Input.GetKey(KeyCode.S))
         {
             direction += -Vector3.forward;
+        }
+
+        if (Input.GetKey(KeyCode.Q))
+        {
+            if (mBombs > 0)
+            {
+                mUseBomb = true;
+                mNumberCollisions = 0; //Regardless of the bomb radius, all enemies touching the player should be destroyed.
+                mBombs--;
+            }
         }
 
         if (mNumberCollisions > 0 && !IsDead() && mShieldImmunityTimeLeft <= 0.0f && !mShieldUp)
@@ -392,6 +407,21 @@ public class Player : MonoBehaviour
         return PowerupTime;
     }
 
+    internal bool UsingBomb()
+    {
+        return mUseBomb;
+    }
+
+    internal void UsedBomb()
+    {
+        mUseBomb = false;
+    }
+
+    internal float GetBombRadius()
+    {
+        return BombRadius;
+    }
+
     //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
     internal void ResetPlayer()
     {
@@ -411,6 +441,7 @@ public class Player : MonoBehaviour
         mBombs = 0;
         mBullets = 0;
         mPickupCooldownTimeLeft = 0.0f;
+        mUseBomb = false;
     }
 }
 

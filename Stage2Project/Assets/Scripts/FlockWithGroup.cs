@@ -87,13 +87,16 @@ public class FlockWithGroup : MonoBehaviour
             
             for (int count = 0; count < mCurrentBuddies.Count; ++count)
             {
-                Rigidbody body = mCurrentBuddies[count].GetComponent<Rigidbody>();
-                align += body.velocity;
-                cohesion += mCurrentBuddies[count].transform.position;
-                if ( ( mCurrentBuddies[count].transform.position - transform.position ).magnitude < AvoidDistance)
+                if (mCurrentBuddies[count] != null)
                 {
-                    avoid += mCurrentBuddies[count].transform.position;
-                    mAvoidBuddiesCount++;
+                    Rigidbody body = mCurrentBuddies[count].GetComponent<Rigidbody>();
+                    align += body.velocity;
+                    cohesion += mCurrentBuddies[count].transform.position;
+                    if ((mCurrentBuddies[count].transform.position - transform.position).magnitude < AvoidDistance)
+                    {
+                        avoid += mCurrentBuddies[count].transform.position;
+                        mAvoidBuddiesCount++;
+                    }
                 }
             }
 
@@ -111,6 +114,16 @@ public class FlockWithGroup : MonoBehaviour
             //Combine the directions found (all of the same order of magnitude: normalised), and then apply force in that direction.
             //Basically, we want to flock with everyone close enough, specified by buddyDistance, but want space in between, as specified by avoidDistance.
             mBody.AddForce(( align + cohesion + avoid) * Speed * Time.deltaTime);
+        }
+    }
+
+    internal void RemovePotentialBuddy(GameObject buddy)
+    {
+        GroupTag buddyGroupTag = buddy.GetComponent<GroupTag>();
+
+        if (buddyGroupTag != null && mCurrentBuddies.Contains(buddyGroupTag))
+        {
+            mCurrentBuddies.Remove(buddyGroupTag);
         }
     }
 }

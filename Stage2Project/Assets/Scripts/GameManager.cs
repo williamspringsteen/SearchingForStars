@@ -89,6 +89,80 @@ public class GameManager : MonoBehaviour
                 mCollPows.Add(spawnedCollPowInstance);
                 mNextCollPowSpawn = TimeBetweenCollPowSpawns;
             }
+
+            /*
+            //Player has a gotbomb bool - GotBomb() is public/internal
+            if (player.UsingBomb() && mEnemies != null) 
+            {
+                List<int> enemyIndicesToRemove = new List<int>();
+
+                distance = player.GetBombRadius();
+
+                for each enemy in mEnemies 
+                {
+                    vector3 difference = player.transform.position - enemy.transform.position;
+    
+                    if (difference.magnitude < distance) {
+                        enemyIndicesToRemove.Add(i); //i is for loop iteration variable
+                    }
+                }
+
+                for each index in enemyIndicesToRemove
+                {
+                    Enemy enemy = mEnemies[index];
+                    mEnemies.Remvove(enemy);
+                    Destroy(enemy);
+                }
+
+                player.UsedBomb(); //Sets a bool to false - this function us internal
+            }
+            */
+
+        if (mPlayer.UsingBomb() && mEnemies != null)
+            {
+                List<int> enemyIndicesToRemove = new List<int>();
+
+                float bombDistance = mPlayer.GetBombRadius();
+
+                for (int count = 0; count < mEnemies.Count; ++count)
+                {
+                    Vector3 difference = mPlayer.transform.position - mEnemies[count].transform.position;
+                    if (mEnemies[count].GetComponent<GroupTag>().Affiliation == GroupTag.Group.Two)
+                    {
+                        print("Enemy of type one is " + difference.magnitude + " away from player");
+                    }
+                    else if (mEnemies[count].GetComponent<GroupTag>().Affiliation == GroupTag.Group.One)
+                    {
+                        print("Enemy of type two is " + difference.magnitude + " away from player");
+                    }
+                    else
+                    {
+                        print("This shouldn't happen.");
+                    }
+                    
+                    if (difference.magnitude <= bombDistance)
+                    {
+                        enemyIndicesToRemove.Add(count);
+                    }
+                }
+
+                print("FOUND " + enemyIndicesToRemove.Count + " ENEMIES TO REMOVE");
+
+                for (int i = 0; i < enemyIndicesToRemove.Count; ++i)
+                {
+                    int index = enemyIndicesToRemove[i];
+                    GameObject enemy = mEnemies[index - i];
+                    mEnemies.Remove(enemy);
+                    FlockWithGroup flockComp = enemy.GetComponent<FlockWithGroup>();
+                    if (flockComp != null)
+                    {
+                        flockComp.RemovePotentialBuddy(enemy);
+                    }
+                    Destroy(enemy);
+                }
+
+                mPlayer.UsedBomb();
+            }
         }
     }
 
