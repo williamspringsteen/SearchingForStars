@@ -10,7 +10,10 @@ public class GameManager : MonoBehaviour
     private GameObject [] SpawnEnemies;
 
     [SerializeField]
-    private GameObject[] SpawnCollPows;
+    private GameObject[] SpawnColls;
+
+    [SerializeField]
+    private GameObject[] SpawnPows;
 
     [SerializeField]
     private Player PlayerPrefab;
@@ -22,15 +25,24 @@ public class GameManager : MonoBehaviour
     private float TimeBetweenEnemySpawns;
 
     [SerializeField]
-    private float TimeBetweenCollPowSpawns;
+    private float TimeBetweenCollSpawns;
+
+    [SerializeField]
+    private float TimeBetweenPowSpawns;
+
+    [SerializeField]
+    private int MaxPowerups;
     
     //TODO: Split up Collectible and Powerups (Since there is only one collectible, and powerups will disappear, and act a lot differently, so it makes sense)
     private List<GameObject> mEnemies;
-    private List<GameObject> mCollPows;
+    private List<GameObject> mColls;
+    private List<GameObject> mPows;
     private Player mPlayer;
     private State mState;
     private float mNextEnemySpawn;
-    private float mNextCollPowSpawn;
+    private float mNextCollSpawn;
+    private float mNextPowSpawn;
+    private int mNumPowerups;
 
     void Awake()
     {
@@ -58,7 +70,9 @@ public class GameManager : MonoBehaviour
             {
                 mNextEnemySpawn += mPlayer.GetPowerupTime() * 1.1f;
             }
+
             mNextEnemySpawn -= Time.deltaTime;
+
             if( mNextEnemySpawn <= 0.0f )
             {
                 if (mEnemies == null)
@@ -74,51 +88,51 @@ public class GameManager : MonoBehaviour
                 mNextEnemySpawn = TimeBetweenEnemySpawns;
             }
 
-            mNextCollPowSpawn -= Time.deltaTime;
-            if (mNextCollPowSpawn <= 0.0f)
+            mNextCollSpawn -= Time.deltaTime;
+
+            if (mNextCollSpawn <= 0.0f)
             {
-                if (mCollPows == null)
+                if (mColls == null)
                 {
-                    mCollPows = new List<GameObject>();
+                    mColls = new List<GameObject>();
                 }
 
-                int indexToSpawnCollPow = Random.Range(0, SpawnCollPows.Length);
-                GameObject spawnCollPow = SpawnCollPows[indexToSpawnCollPow];
-                GameObject spawnedCollPowInstance = Instantiate(spawnCollPow);
-                spawnedCollPowInstance.transform.parent = transform;
-                mCollPows.Add(spawnedCollPowInstance);
-                mNextCollPowSpawn = TimeBetweenCollPowSpawns;
+                int indexToSpawnColl = Random.Range(0, SpawnColls.Length);
+                GameObject spawnColl = SpawnColls[indexToSpawnColl];
+                GameObject spawnedCollInstance = Instantiate(spawnColl);
+                spawnedCollInstance.transform.parent = transform;
+                mColls.Add(spawnedCollInstance);
+                mNextCollSpawn = TimeBetweenCollSpawns;
+            }
+            //TODO: If maximum number of powerups reached, delete a random old one, and then make new one.
+            //TODO_maybe: Potentially, only have a maximum of one of each powerup - but this doesn't really matter too much, it's just a feature that could easily be put in.
+            mNextPowSpawn -= Time.deltaTime;
+
+            if (mNextPowSpawn <= 0.0f)
+            {
+                if (mPows == null)
+                {
+                    mPows = new List<GameObject>();
+                }
+
+                if (mNumPowerups >= MaxPowerups)
+                {
+                    int indexToDeletePow = Random.Range(0, mPows.Count - 1);
+                    GameObject powToDelete = mPows[indexToDeletePow];
+                    mPows.Remove(powToDelete);
+                    Destroy(powToDelete);
+                }
+
+                int indexToSpawnPow = Random.Range(0, SpawnPows.Length);
+                GameObject spawnPow = SpawnPows[indexToSpawnPow];
+                GameObject spawnedPowInstance = Instantiate(spawnPow);
+                spawnedPowInstance.transform.parent = transform;
+                mPows.Add(spawnedPowInstance);
+                mNextPowSpawn = TimeBetweenPowSpawns;
+                mNumPowerups++;
             }
 
-            /*
-            //Player has a gotbomb bool - GotBomb() is public/internal
-            if (player.UsingBomb() && mEnemies != null) 
-            {
-                List<int> enemyIndicesToRemove = new List<int>();
-
-                distance = player.GetBombRadius();
-
-                for each enemy in mEnemies 
-                {
-                    vector3 difference = player.transform.position - enemy.transform.position;
-    
-                    if (difference.magnitude < distance) {
-                        enemyIndicesToRemove.Add(i); //i is for loop iteration variable
-                    }
-                }
-
-                for each index in enemyIndicesToRemove
-                {
-                    Enemy enemy = mEnemies[index];
-                    mEnemies.Remvove(enemy);
-                    Destroy(enemy);
-                }
-
-                player.UsedBomb(); //Sets a bool to false - this function us internal
-            }
-            */
-
-        if (mPlayer.UsingBomb() && mEnemies != null)
+            if (mPlayer.UsingBomb() && mEnemies != null)
             {
                 List<int> enemyIndicesToRemove = new List<int>();
 
@@ -127,26 +141,12 @@ public class GameManager : MonoBehaviour
                 for (int count = 0; count < mEnemies.Count; ++count)
                 {
                     Vector3 difference = mPlayer.transform.position - mEnemies[count].transform.position;
-                    if (mEnemies[count].GetComponent<GroupTag>().Affiliation == GroupTag.Group.Two)
-                    {
-                        print("Enemy of type one is " + difference.magnitude + " away from player");
-                    }
-                    else if (mEnemies[count].GetComponent<GroupTag>().Affiliation == GroupTag.Group.One)
-                    {
-                        print("Enemy of type two is " + difference.magnitude + " away from player");
-                    }
-                    else
-                    {
-                        print("This shouldn't happen.");
-                    }
                     
                     if (difference.magnitude <= bombDistance)
                     {
                         enemyIndicesToRemove.Add(count);
                     }
                 }
-
-                print("FOUND " + enemyIndicesToRemove.Count + " ENEMIES TO REMOVE");
 
                 for (int i = 0; i < enemyIndicesToRemove.Count; ++i)
                 {
@@ -177,17 +177,28 @@ public class GameManager : MonoBehaviour
             mEnemies.Clear();
         }
 
-        if (mCollPows != null)
+        if (mColls != null)
         {
-            for (int count = 0; count < mCollPows.Count; ++count)
+            for (int count = 0; count < mColls.Count; ++count)
             {
-                Destroy(mCollPows[count]);
+                Destroy(mColls[count]);
             }
-            mCollPows.Clear();
+            mColls.Clear();
+        }
+
+        if (mPows != null)
+        {
+            for (int count = 0; count < mPows.Count; ++count)
+            {
+                Destroy(mPows[count]);
+            }
+            mPows.Clear();
         }
 
         mNextEnemySpawn = TimeBetweenEnemySpawns;
-        mNextCollPowSpawn = TimeBetweenCollPowSpawns;
+        mNextCollSpawn = TimeBetweenCollSpawns;
+        mNextPowSpawn = TimeBetweenPowSpawns;
+        mNumPowerups = 0;
         mPlayer.ResetPlayer();
         mPlayer.enabled = true;
         mState = State.Playing;
@@ -207,13 +218,22 @@ public class GameManager : MonoBehaviour
             mEnemies.Clear();
         }
 
-        if (mCollPows != null)
+        if (mColls != null)
         {
-            for (int count = 0; count < mCollPows.Count; ++count)
+            for (int count = 0; count < mColls.Count; ++count)
             {
-                Destroy(mCollPows[count]);
+                Destroy(mColls[count]);
             }
-            mCollPows.Clear();
+            mColls.Clear();
+        }
+
+        if (mPows != null)
+        {
+            for (int count = 0; count < mPows.Count; ++count)
+            {
+                Destroy(mPows[count]);
+            }
+            mPows.Clear();
         }
 
         mPlayer.ResetPlayer();
