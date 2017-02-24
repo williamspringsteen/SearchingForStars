@@ -44,7 +44,7 @@ public class FlockWithGroup : MonoBehaviour
     }
 
     //Buddy list is every object of the specified group type within BuddyDistance
-    private void UpdateBuddyList()
+    internal void UpdateBuddyList()
     {
         GroupTag[] individuals = FindObjectsOfType<GroupTag>();
 
@@ -114,16 +114,6 @@ public class FlockWithGroup : MonoBehaviour
             //Combine the directions found (all of the same order of magnitude: normalised), and then apply force in that direction.
             //Basically, we want to flock with everyone close enough, specified by buddyDistance, but want space in between, as specified by avoidDistance.
             mBody.AddForce(( align + cohesion + avoid) * Speed * Time.deltaTime);
-        }
-    }
-
-    internal void RemovePotentialBuddy(GameObject buddy)
-    {
-        GroupTag buddyGroupTag = buddy.GetComponent<GroupTag>();
-
-        if (buddyGroupTag != null && mCurrentBuddies.Contains(buddyGroupTag))
-        {
-            mCurrentBuddies.Remove(buddyGroupTag);
         }
     }
 }

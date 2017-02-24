@@ -156,7 +156,7 @@ public class GameManager : MonoBehaviour
                     FlockWithGroup flockComp = enemy.GetComponent<FlockWithGroup>();
                     if (flockComp != null)
                     {
-                        flockComp.RemovePotentialBuddy(enemy);
+                        flockComp.UpdateBuddyList();
                     }
                     Destroy(enemy);
                 }
