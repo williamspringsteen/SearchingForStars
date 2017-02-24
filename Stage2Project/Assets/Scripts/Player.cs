@@ -161,16 +161,18 @@ public class Player : MonoBehaviour
             if (HasJustGotRepelPowerup())
             {
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
-
-                for (int count = 0; count < individuals.Length; ++count)
+                if (individuals != null)
                 {
-                    MagnetizedByPlayer individual = individuals[count];
-
-                    if (!individual.CompareTag("Collectible") && individual.ForceType == MagnetizedByPlayer.Type.Attract)
+                    for (int count = 0; count < individuals.Length; ++count)
                     {
-            
-                        individual.MakeRepelling();
-                        mRepellingToAttracting.Add(individual);
+                        MagnetizedByPlayer individual = individuals[count];
+
+                        if ((individual != null) && !individual.CompareTag("Collectible") && (individual.ForceType == MagnetizedByPlayer.Type.Attract))
+                        {
+
+                            individual.MakeRepelling();
+                            mRepellingToAttracting.Add(individual);
+                        }
                     }
                 }
             }
@@ -179,8 +181,10 @@ public class Player : MonoBehaviour
                 /* The repellent powerup is about to expire, so make all enemies that should be attracting, attract again. */
                 for (int count = 0; count < mRepellingToAttracting.Count; ++count)
                 {
-            
-                    mRepellingToAttracting[count].RevertMagnetizeType();
+                    if (mRepellingToAttracting[count] != null)
+                    {
+                        mRepellingToAttracting[count].RevertMagnetizeType();
+                    }
                 }
                 mRepellingToAttracting.Clear();
             }
@@ -195,19 +199,23 @@ public class Player : MonoBehaviour
             {
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
 
-                for (int count = 0; count < individuals.Length; ++count)
+                if (individuals != null)
                 {
-                    MagnetizedByPlayer individual = individuals[count];
 
-                    if (!individual.CompareTag("Collectible"))
+                    for (int count = 0; count < individuals.Length; ++count)
                     {
-                        Vector3 difference = individuals[count].transform.position - transform.position;
-                        if (difference.magnitude <= MassRepelDistance)
+                        MagnetizedByPlayer individual = individuals[count];
+
+                        if ((individual != null) && !individual.CompareTag("Collectible"))
                         {
-                            individual.MakeRepelling();
-                            individual.SetMassRepelForce();
-                            individual.SetMassRepelDistance();
-                            mMassRepelEnemies.Add(individual);
+                            Vector3 difference = individuals[count].transform.position - transform.position;
+                            if (difference.magnitude <= MassRepelDistance)
+                            {
+                                individual.MakeRepelling();
+                                individual.SetMassRepelForce();
+                                individual.SetMassRepelDistance();
+                                mMassRepelEnemies.Add(individual);
+                            }
                         }
                     }
                 }
@@ -216,9 +224,12 @@ public class Player : MonoBehaviour
             {
                 for (int count = 0; count < mMassRepelEnemies.Count; ++count)
                 {
-                    mMassRepelEnemies[count].RevertMagnetizeType();
-                    mMassRepelEnemies[count].RevertMassRepelForce();
-                    mMassRepelEnemies[count].RevertMassRepelDistance();
+                    if (mMassRepelEnemies[count] != null)
+                    {
+                        mMassRepelEnemies[count].RevertMagnetizeType();
+                        mMassRepelEnemies[count].RevertMassRepelForce();
+                        mMassRepelEnemies[count].RevertMassRepelDistance();
+                    }
                 }
                 mMassRepelEnemies.Clear();
             }
