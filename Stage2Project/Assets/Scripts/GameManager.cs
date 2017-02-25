@@ -64,8 +64,9 @@ public class GameManager : MonoBehaviour
     {
         if(mState == State.Playing)
         {
-            //Stop new enemies spawning while repellent powerup is in effect.
-            //It is multiplied by 1.1f so that a new enemy doesn't just instantly spawn after powerup expires.
+            /* Stop new enemies spawning while repellent powerup is in effect.
+             * It is multiplied by 1.1f so that a new enemy doesn't just 
+             * instantly spawn after powerup expires. */
             if (mPlayer.HasJustGotRepellentPowerup())
             {
                 mNextEnemySpawn += mPlayer.GetRepellentPowerupTime() * 1.1f;
@@ -104,8 +105,7 @@ public class GameManager : MonoBehaviour
                 mColls.Add(spawnedCollInstance);
                 mNextCollSpawn = TimeBetweenCollSpawns;
             }
-            //TODO: If maximum number of powerups reached, delete a random old one, and then make new one.
-            //TODO_maybe: Potentially, only have a maximum of one of each powerup - but this doesn't really matter too much, it's just a feature that could easily be put in.
+
             mNextPowSpawn -= Time.deltaTime;
 
             if (mNextPowSpawn <= 0.0f)
@@ -115,6 +115,9 @@ public class GameManager : MonoBehaviour
                     mPows = new List<GameObject>();
                 }
 
+                /* If there is already the maximum number of powerups on the 
+                 * field, a random old one will be removed, to make way for a 
+                 * new one (in a different position). */
                 if (mNumPowerups >= MaxPowerups)
                 {
                     int indexToDeletePow = Random.Range(0, mPows.Count - 1);

@@ -106,13 +106,22 @@ public class Player : MonoBehaviour
     private float mUseBombCooldown;
 
     /* These are for displaying the damage bar. */
+    public float xEdgeBuffer = 2;
+    public float yEdgeBuffer = 1;
     public float BarProgress;
-    public Vector2 BarPos = new Vector2(200, 40);
+    public Vector2 BarPos;
     public int BarWidth = 60;
     public int BarHeight = 20;
     public Vector2 BarSize;
     public Texture2D BarEmptyTex;
     public Texture2D BarFullTex;
+
+    /* GUI element styles for the different text displayed by OnGUI(). */
+    GUIStyle damageStyle = new GUIStyle();
+    GUIStyle barStyle = new GUIStyle();
+    GUIStyle scoreStyle = new GUIStyle();
+    GUIStyle bombStyle = new GUIStyle();
+    GUIStyle deadStyle = new GUIStyle();
 
     void Awake()
     {
@@ -124,6 +133,7 @@ public class Player : MonoBehaviour
         /* Set most of the fields of the player to default values. */
         ResetPlayer();
 
+        BarPos = new Vector2(Screen.width / 6, yEdgeBuffer);
         BarSize = new Vector2(BarWidth, BarHeight);
         BarEmptyTex = new Texture2D(BarWidth, BarHeight);
         BarFullTex = new Texture2D(BarWidth, BarHeight);
@@ -131,6 +141,27 @@ public class Player : MonoBehaviour
         Color32 red = new Color32(255, 0, 0, 255);
         FillTexture(BarEmptyTex, green);
         FillTexture(BarFullTex, red);
+
+        damageStyle.alignment = TextAnchor.MiddleCenter;
+        damageStyle.fontSize = 18;
+        damageStyle.normal.textColor = Color.white;
+
+        barStyle.border.left = 0;
+        barStyle.border.right = 0;
+        barStyle.border.bottom = 0;
+        barStyle.border.top = 0;
+
+        scoreStyle.fontSize = 18;
+        scoreStyle.normal.textColor = Color.white;
+        scoreStyle.alignment = TextAnchor.UpperCenter;
+
+        bombStyle.fontSize = 18;
+        bombStyle.normal.textColor = Color.white;
+        bombStyle.alignment = TextAnchor.UpperRight;
+
+        deadStyle.alignment = TextAnchor.MiddleCenter;
+        deadStyle.fontSize = 30;
+        deadStyle.normal.textColor = Color.white;
     }
 
     void Update()
@@ -174,80 +205,56 @@ public class Player : MonoBehaviour
         if (mNumberCollisions > 0 && !IsDead() && mShieldImmunityTimeLeft <= 0.0f && !mShieldUp)
         {
             mHealth -= 10f;
+
+            //This updates the damage bar to reflect the current health.
+            BarProgress = mHealth * (1 / InitialHealth);
         }
 
-        //TODO: Maybe do something here, although it messes with the way the screens and buttons work 
-        //Also, we want to make sure this 
-        /*if (IsDead())
-        {
-            print("You are dead.");
-            //gameObject.SetActive(false);
-            //gameObject.GetComponent(Player).enabled = false;
-            //Player player = gameObject.GetComponent(typeof(Player)) as Player;
-            //player.enabled = false;
-        }*/
+        /* Following code deals with setting or reverting the magnetism of the 
+         * enemies, if the player has a repelling powerup. It also deals with 
+         * decrementing the time that each of these powerups has left. */
+        bool repellentPlayer = IsRepellentPlayer();
+        bool massRepelling = IsMassRepelling();
 
-        if (mRepellentPlayerTimeLeft > 0.0f)
+        if (repellentPlayer || massRepelling)
         {
-            float newTimeLeft = mRepellentPlayerTimeLeft - Time.deltaTime;
+            float timeLeft = repellentPlayer ? mRepellentPlayerTimeLeft : mMassRepelTimeLeft;
 
-            if (HasJustGotRepellentPowerup())
+            float newTimeLeft = timeLeft - Time.deltaTime;
+
+            if (HasJustGotRepelPowerup())
             {
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
+
                 if (individuals != null)
                 {
                     for (int count = 0; count < individuals.Length; ++count)
                     {
                         MagnetizedByPlayer individual = individuals[count];
 
-                        if ((individual != null) && !individual.CompareTag("Collectible") && (individual.ForceType == MagnetizedByPlayer.Type.Attract))
+                        /* The RepellentPlayer powerup will only repel things 
+                         * that were previously attracting to the player. It 
+                         * will also only repel it by the same force that it 
+                         * was previously attracting with. */
+                        bool affected = repellentPlayer ? individual.ForceType == MagnetizedByPlayer.Type.Attract : true;
+
+                        if ((individual != null) && !individual.CompareTag("Collectible") && affected)
                         {
-
-                            individual.MakeRepelling();
-                            mRepellingToAttracting.Add(individual);
-                        }
-                    }
-                }
-            }
-            else if (newTimeLeft < 0.0f)
-            {
-                /* The repellent powerup is about to expire, so make all enemies that should be attracting, attract again. */
-                for (int count = 0; count < mRepellingToAttracting.Count; ++count)
-                {
-                    if (mRepellingToAttracting[count] != null)
-                    {
-                        mRepellingToAttracting[count].RevertMagnetizeType();
-                    }
-                }
-                mRepellingToAttracting.Clear();
-            }
-
-            mRepellentPlayerTimeLeft = newTimeLeft;
-        }
-        else if (mMassRepelTimeLeft > 0.0f)
-        {
-            float newTimeLeft = mMassRepelTimeLeft - Time.deltaTime;
-
-            if (HasJustGotMassRepelPowerup())
-            {
-                MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
-
-                if (individuals != null)
-                {
-
-                    for (int count = 0; count < individuals.Length; ++count)
-                    {
-                        MagnetizedByPlayer individual = individuals[count];
-
-                        if ((individual != null) && !individual.CompareTag("Collectible"))
-                        {
-                            Vector3 difference = individuals[count].transform.position - transform.position;
-                            if (difference.magnitude <= MassRepelDistance)
+                            if (repellentPlayer)
                             {
                                 individual.MakeRepelling();
-                                individual.SetMassRepelForce();
-                                individual.SetMassRepelDistance();
-                                mMassRepelEnemies.Add(individual);
+                                mRepellingToAttracting.Add(individual);
+                            }
+                            else if (massRepelling)
+                            {
+                                Vector3 difference = individual.transform.position - transform.position;
+                                if (difference.magnitude <= MassRepelDistance)
+                                {
+                                    individual.MakeRepelling();
+                                    individual.SetMassRepelForce();
+                                    individual.SetMassRepelDistance();
+                                    mMassRepelEnemies.Add(individual);
+                                }
                             }
                         }
                     }
@@ -255,19 +262,34 @@ public class Player : MonoBehaviour
             }
             else if (newTimeLeft < 0.0f)
             {
-                for (int count = 0; count < mMassRepelEnemies.Count; ++count)
+                List<MagnetizedByPlayer> repellingEnemies = repellentPlayer ? mRepellingToAttracting : mMassRepelEnemies;
+
+                for (int count = 0; count < repellingEnemies.Count; ++count)
                 {
-                    if (mMassRepelEnemies[count] != null)
+                    MagnetizedByPlayer enemy = repellingEnemies[count];
+
+                    if (enemy != null)
                     {
-                        mMassRepelEnemies[count].RevertMagnetizeType();
-                        mMassRepelEnemies[count].RevertMassRepelForce();
-                        mMassRepelEnemies[count].RevertMassRepelDistance();
+                        enemy.RevertMagnetizeType();
+                        if (massRepelling)
+                        {
+                            enemy.RevertMassRepelForce();
+                            enemy.RevertMassRepelDistance();
+                        }
                     }
                 }
-                mMassRepelEnemies.Clear();
+
+                repellingEnemies.Clear();
             }
 
-            mMassRepelTimeLeft = newTimeLeft;
+            if (repellentPlayer)
+            {
+                mRepellentPlayerTimeLeft = newTimeLeft;
+            }
+            else
+            {
+                mMassRepelTimeLeft = newTimeLeft;
+            }
         }
 
         mMassRepelCooldown -= Time.deltaTime;
@@ -281,8 +303,6 @@ public class Player : MonoBehaviour
         {
             mPickupCooldownTimeLeft -= Time.deltaTime;
         }
-
-        BarProgress = mHealth * (1 / InitialHealth);
 
         mNextUpdateScore -= Time.deltaTime;
         if (mNextUpdateScore <= 0.0f)
@@ -338,8 +358,6 @@ public class Player : MonoBehaviour
                 switch (powerupType)
                 {
                     case PowerupTag.Powerup.Bomb:
-                        //Increment bomb count 
-                        //(Code to set off bomb still to be written somewhere)
                         if (mPickupCooldownTimeLeft <= 0.0f)
                         {
                             mBombs++;
@@ -373,46 +391,30 @@ public class Player : MonoBehaviour
 
     void OnGUI()
     {
-
-        GUIStyle damageStyle = new GUIStyle();
-        damageStyle.alignment = TextAnchor.MiddleCenter;
-        damageStyle.fontSize = 18;
-        damageStyle.normal.textColor = Color.white;
-
-        GUI.BeginGroup(new Rect(0, BarPos.y, BarPos.x, BarHeight));
-            GUI.Label(new Rect(0, 0, BarPos.x, BarHeight), "Damage: ", damageStyle);
+        GUI.BeginGroup(new Rect(xEdgeBuffer, yEdgeBuffer, BarPos.x - (2 * xEdgeBuffer), BarHeight - (2*yEdgeBuffer)));
+            GUI.Label(new Rect(0, 0, BarPos.x - (2 * xEdgeBuffer), BarHeight - (2 * yEdgeBuffer)), "Damage: ", damageStyle);
         GUI.EndGroup();
-
-        GUIStyle barStyle = new GUIStyle();
-        barStyle.border.left = 0;
-        barStyle.border.right = 0;
-        barStyle.border.bottom = 0;
-        barStyle.border.top = 0;
 
         //Empty health bar
         GUI.BeginGroup(new Rect(BarPos.x, BarPos.y, BarWidth, BarHeight));
             GUI.Box(new Rect(0, 0, BarWidth, BarHeight), BarFullTex, barStyle);
-
             //Health bar filled in by BarProgress amount
             GUI.BeginGroup(new Rect(BarWidth - BarWidth * BarProgress, 0, BarWidth * BarProgress, BarHeight));
                 GUI.Box(new Rect(0, 0, BarWidth, BarHeight), BarEmptyTex, barStyle);
-
             GUI.EndGroup();
         GUI.EndGroup();
 
-        GUIStyle otherTextStyle = new GUIStyle();
-        otherTextStyle.fontSize = 18;
-        otherTextStyle.normal.textColor = Color.white;
-
-        GUI.BeginGroup(new Rect(BarPos.x + 400, BarPos.y, BarWidth + 100, BarHeight));
-            GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Score: " + mScore.ToString(), otherTextStyle);
+        GUI.BeginGroup(new Rect(xEdgeBuffer, yEdgeBuffer, Screen.width - (2 * xEdgeBuffer), Screen.height - (2 * yEdgeBuffer)));
+            GUI.Label(new Rect(0, 0, Screen.width - (2 * xEdgeBuffer), Screen.height - (2 * yEdgeBuffer)), "Bombs: " + mBombs.ToString(), bombStyle);
+            GUI.Label(new Rect(0, 0, Screen.width - (2 * xEdgeBuffer), Screen.height - (2 * yEdgeBuffer)), "Score: " + mScore.ToString(), scoreStyle);
         GUI.EndGroup();
 
-        GUI.BeginGroup(new Rect(BarPos.x + 200, BarPos.y, BarWidth + 100, BarHeight));
-            GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Bombs: " + mBombs.ToString(), otherTextStyle);
-        GUI.EndGroup();
+        if (IsDead())
+        {
+            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "Ship failure.", deadStyle);
+        }
 
-        //Maybe_TODO: if (mRepellentPlayerTimeLeft > 0.0f) { display timer below player, based on PowerupTime and current mRepellentPlayerTime }
+        //Maybe_TODO: if (mRepellentPlayerTimeLeft > 0.0f) { display timer below player, based on PowerupTime and current mRepellentPlayerTime } and similar for mass repel
     }
 
     void FillTexture(Texture2D texture, Color32 colour)
@@ -442,6 +444,21 @@ public class Player : MonoBehaviour
         return (mMassRepelTimeLeft == mMassRepelPowerupTime);
     }
 
+    private bool IsRepellentPlayer()
+    {
+        return mRepellentPlayerTimeLeft > 0.0f;
+    }
+
+    private bool IsMassRepelling()
+    {
+        return mMassRepelTimeLeft > 0.0f;
+    }
+
+    private bool HasJustGotRepelPowerup()
+    {
+        return (HasJustGotRepellentPowerup() || HasJustGotMassRepelPowerup());
+    }
+
     internal float GetRepellentPowerupTime()
     {
         return mRepellentPowerupTime;
@@ -452,9 +469,12 @@ public class Player : MonoBehaviour
         return mUseBomb;
     }
 
+    /* Called when a bomb has been successfully used, and the appropriate 
+     * enemies have been destroyed. */
     internal void UsedBomb()
     {
-        //Regardless of the bomb radius, all enemies touching the player should be destroyed.
+        /* Regardless of the bomb radius, all enemies touching the player 
+         * should be destroyed. */
         mNumberCollisions = 0;
 
         mUseBomb = false;
@@ -465,12 +485,12 @@ public class Player : MonoBehaviour
         return BombRadius;
     }
 
-    //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
     /* Set most of the fields, and things like position, of the player to 
      * default starting values. */
     internal void ResetPlayer()
     {
-        transform.position = new Vector3(0.0f, 0.5f, 0.0f); //This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
+        //TODO: For two players - This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
+        transform.position = new Vector3(0.0f, 0.5f, 0.0f); 
         mHealth = InitialHealth;
         mScore = 0;
         mNumberCollisions = 0;
