@@ -8,7 +8,7 @@ public class MagnetizedByPlayer : MonoBehaviour
     public enum Type { Attract, Repel }
 
     [SerializeField]
-    private float RepelForce = 1000.0f;
+    private float RepelForce = 400.0f;
 
     [SerializeField]
     private float MinimumDistance = 1.0f;
@@ -17,7 +17,7 @@ public class MagnetizedByPlayer : MonoBehaviour
     private Type MagnetizeType = Type.Repel;
 
     [SerializeField]
-    private float MassRepelForce = 1000.0f;
+    private float MassRepelForce = 550.0f;
 
     private float mMassRepelDistance = 3000.0f;
 

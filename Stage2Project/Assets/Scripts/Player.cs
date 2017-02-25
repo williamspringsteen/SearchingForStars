@@ -9,70 +9,103 @@ using UnityEngine.UI;
 [RequireComponent(typeof(ParticleSystem))]
 public class Player : MonoBehaviour
 {
+    /* The speed of this player. */
     [SerializeField]
     private float Speed;
 
+    /* The starting health of this player. */
     [SerializeField]
     private float InitialHealth;
 
+    /* Player gets one point every 'TimeBetweenScoreIncrease' seconds. */
     [SerializeField]
-    private float Defense;
+    private float TimeBetweenScoreIncrease = 2.0f;
 
-    [SerializeField]
-    private float TimeBetweenScoreIncrease;
-
+    /* When a 'Mass Repel' powerup is used (as soon as the powerup is flown 
+     * over), every enemy within 'MassRepelDistance' of the player will briefly
+     * be repelled with a large repelling force. */
     [SerializeField]
     private float MassRepelDistance = 40.0f;
-
-    //Some may last 1 * PowerupTime, others 1.5 * PowerupTime, etc., so this time is relative
-    //(Or may just keep it as 1 * PowerupTime, since a lot of the powerups don't decay)
-    [SerializeField]
-    private float PowerupTime = 10.0f;
-
+    
+    /* When a bomb is used, every enemy withing 'BombRadius' will be 
+     * destroyed. */
     [SerializeField]
     private float BombRadius = 30.0f;
 
-    private float mMassRepelPowerupTime;
+    /* Time that the repellent and mass repel powerups will repel for. */
+    private float mRepellentPowerupTime = 10.0f;
+    private float mMassRepelPowerupTime = 0.4f;
 
+    /* Number of enemies currently colliding with the player, thus causing the 
+     * player to lose health. */
     private int mNumberCollisions;
 
+    /* The RigidBody component for this player. */
     private Rigidbody mBody;
 
+    /* The current health of the player. */
     private float mHealth;
 
+    /* The current score of the player. */
     private int mScore;
 
+    /* Repeatedly set to equal 'TimeBetweenScoreIncrease', and decreased every 
+     * frame in Update(), and then when this reaches zero, the score will be 
+     * updated. */
     private float mNextUpdateScore;
 
+    /* Similar to mNextUpdateScore. */
     private float mRepellentPlayerTimeLeft;
 
+    /* Similar to mNextUpdateScore. */
     private float mMassRepelTimeLeft;
 
-    private float mMassRepelCooldown;
+    /* Minimum time a player must wait between using mass repel powerups. */
+    private float mMassRepelCooldown = 2.4f;
 
+    /* A list of the enemies that have been made repellent to the player by the
+     * repellent player powerup, that need to be made to attract again when the
+     * powerup expires. */
     private List<MagnetizedByPlayer> mRepellingToAttracting;
 
+    /* Similar to mRepellingToAttracting, but for the mass repel powerup. */
     private List<MagnetizedByPlayer> mMassRepelEnemies;
 
+    /* True if the player has the shield powerup. */
     private bool mShieldUp;
 
+    /* Similar to mNextUpdateScore. */
     private float mShieldImmunityTimeLeft;
 
-    private float mShieldDownImmunityTime = 2.0f; //TODO: Change to 1? Maybe make serializable?
+    /* After the player is hit while they have a shield, they are immune for 
+     * this many seconds. */
+    private float mShieldDownImmunityTime = 2.0f; 
 
+    /* The player's shield. mShield.enabled is toggled depending on whether 
+     * the shield should currently be active. */
     private ParticleSystem.EmissionModule mShield;
 
+    /* Number of bombs the player currently has. */
     private int mBombs;
 
-    private int mBullets;
+    /* Minimum time a player must wait between using obtaining pickups, such as
+     * bombs. (Currently, bombs are the only powerups considered a pickup) */
+    private float mPickupCooldown = 4.0f;
 
-    private float mPickupCooldown = 5.0f;
-
+    /* Similar to mNextUpdateScore. */
     private float mPickupCooldownTimeLeft;    
 
+    /* True if the user has just pressed the button to use a bomb, and is then 
+     * set to false after the bomb has finished being used.  */
     private bool mUseBomb = false;
 
-    //For health bar
+    /* Minimum time a player must wait between using bombs. */
+    private float mUseBombCooldownTime = 1.5f;
+
+    /* Similar to mNextUpdateScore. */
+    private float mUseBombCooldown;
+
+    /* These are for displaying the damage bar. */
     public float BarProgress;
     public Vector2 BarPos = new Vector2(200, 40);
     public int BarWidth = 60;
@@ -84,16 +117,11 @@ public class Player : MonoBehaviour
     void Awake()
     {
         mBody = GetComponent<Rigidbody>();
-
         mShield = GetComponent<ParticleSystem>().emission;
-
         mRepellingToAttracting = new List<MagnetizedByPlayer>();
-
         mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
-        mMassRepelPowerupTime = PowerupTime / 30.0f;
-        //mMassRepelPowerupTime = 0.4f;
-
+        /* Set most of the fields of the player to default values. */
         ResetPlayer();
 
         BarSize = new Vector2(BarWidth, BarHeight);
@@ -103,7 +131,6 @@ public class Player : MonoBehaviour
         Color32 red = new Color32(255, 0, 0, 255);
         FillTexture(BarEmptyTex, green);
         FillTexture(BarFullTex, red);
-        
     }
 
     void Update()
@@ -128,19 +155,25 @@ public class Player : MonoBehaviour
             direction += -Vector3.forward;
         }
 
+        if (mUseBombCooldown > 0.0f)
+        {
+            mUseBombCooldown -= Time.deltaTime;
+        }
+
+        /* Press this key to fire a bomb. */
         if (Input.GetKey(KeyCode.Q))
         {
-            if (mBombs > 0)
+            if (mUseBombCooldown <= 0.0f && mBombs > 0)
             {
                 mUseBomb = true;
-                mNumberCollisions = 0; //Regardless of the bomb radius, all enemies touching the player should be destroyed.
                 mBombs--;
+                mUseBombCooldown = mUseBombCooldownTime;
             }
         }
 
         if (mNumberCollisions > 0 && !IsDead() && mShieldImmunityTimeLeft <= 0.0f && !mShieldUp)
         {
-            mHealth -= ((1 / Defense) * 10f);
+            mHealth -= 10f;
         }
 
         //TODO: Maybe do something here, although it messes with the way the screens and buttons work 
@@ -158,7 +191,7 @@ public class Player : MonoBehaviour
         {
             float newTimeLeft = mRepellentPlayerTimeLeft - Time.deltaTime;
 
-            if (HasJustGotRepelPowerup())
+            if (HasJustGotRepellentPowerup())
             {
                 MagnetizedByPlayer[] individuals = FindObjectsOfType<MagnetizedByPlayer>();
                 if (individuals != null)
@@ -313,14 +346,6 @@ public class Player : MonoBehaviour
                             mPickupCooldownTimeLeft = mPickupCooldown;
                         }
                         break;
-                    case PowerupTag.Powerup.Bullets:
-                        //
-                        if (mPickupCooldownTimeLeft <= 0.0f)
-                        {
-                            mBullets++;
-                            mPickupCooldownTimeLeft = mPickupCooldown;
-                        }
-                        break;
                     case PowerupTag.Powerup.MassRepel:
                         if (mMassRepelCooldown <= 0.0f && mRepellentPlayerTimeLeft <= 0.0f)
                         {
@@ -331,7 +356,7 @@ public class Player : MonoBehaviour
                     case PowerupTag.Powerup.RepellentPlayer:
                         if (mMassRepelTimeLeft <= 0.0f)
                         {
-                            mRepellentPlayerTimeLeft = PowerupTime;
+                            mRepellentPlayerTimeLeft = mRepellentPowerupTime;
                         }
                         break;
                     case PowerupTag.Powerup.Shield:
@@ -375,12 +400,16 @@ public class Player : MonoBehaviour
             GUI.EndGroup();
         GUI.EndGroup();
 
-        GUIStyle scoreStyle = new GUIStyle();
-        scoreStyle.fontSize = 18;
-        scoreStyle.normal.textColor = Color.white;
+        GUIStyle otherTextStyle = new GUIStyle();
+        otherTextStyle.fontSize = 18;
+        otherTextStyle.normal.textColor = Color.white;
 
         GUI.BeginGroup(new Rect(BarPos.x + 400, BarPos.y, BarWidth + 100, BarHeight));
-            GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Score: " + mScore.ToString(), scoreStyle);
+            GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Score: " + mScore.ToString(), otherTextStyle);
+        GUI.EndGroup();
+
+        GUI.BeginGroup(new Rect(BarPos.x + 200, BarPos.y, BarWidth + 100, BarHeight));
+            GUI.Label(new Rect(0, 0, BarWidth, BarHeight), "Bombs: " + mBombs.ToString(), otherTextStyle);
         GUI.EndGroup();
 
         //Maybe_TODO: if (mRepellentPlayerTimeLeft > 0.0f) { display timer below player, based on PowerupTime and current mRepellentPlayerTime }
@@ -403,9 +432,9 @@ public class Player : MonoBehaviour
         return mHealth <= 0;
     }
 
-    internal bool HasJustGotRepelPowerup()
+    internal bool HasJustGotRepellentPowerup()
     {
-        return (mRepellentPlayerTimeLeft == PowerupTime);
+        return (mRepellentPlayerTimeLeft == mRepellentPowerupTime);
     }
 
     private bool HasJustGotMassRepelPowerup()
@@ -413,9 +442,9 @@ public class Player : MonoBehaviour
         return (mMassRepelTimeLeft == mMassRepelPowerupTime);
     }
 
-    internal float GetPowerupTime()
+    internal float GetRepellentPowerupTime()
     {
-        return PowerupTime;
+        return mRepellentPowerupTime;
     }
 
     internal bool UsingBomb()
@@ -425,6 +454,9 @@ public class Player : MonoBehaviour
 
     internal void UsedBomb()
     {
+        //Regardless of the bomb radius, all enemies touching the player should be destroyed.
+        mNumberCollisions = 0;
+
         mUseBomb = false;
     }
 
@@ -434,6 +466,8 @@ public class Player : MonoBehaviour
     }
 
     //Protection of this function is worrying, although the given code could access the mPlayer.transform already, I still feel uneasy that you can access the health, score and number of collisions.
+    /* Set most of the fields, and things like position, of the player to 
+     * default starting values. */
     internal void ResetPlayer()
     {
         transform.position = new Vector3(0.0f, 0.5f, 0.0f); //This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
@@ -450,9 +484,9 @@ public class Player : MonoBehaviour
         mShieldUp = false;
         mShield.enabled = false;
         mBombs = 0;
-        mBullets = 0;
         mPickupCooldownTimeLeft = 0.0f;
         mUseBomb = false;
+        mUseBombCooldown = 0.0f;
     }
 }
 
