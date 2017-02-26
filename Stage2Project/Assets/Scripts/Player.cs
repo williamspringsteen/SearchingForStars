@@ -247,7 +247,7 @@ public class Player : MonoBehaviour
                             }
                             else if (massRepelling)
                             {
-                                Vector3 difference = individual.transform.position - transform.position;
+                                Vector3 difference = individual.transform.position - GetCenter();
                                 if (difference.magnitude <= MassRepelDistance)
                                 {
                                     individual.MakeRepelling();
@@ -485,13 +485,28 @@ public class Player : MonoBehaviour
         return BombRadius;
     }
 
+    /* Necessary because the pivot point of the player sprites I am using are 
+     * not at the center of the object. transform.position will return the 
+     * pivot point. This will return the center point. Another fix, short of 
+     * changing pivot point in 3D editor, would have been to put object inside 
+     an empty gameObject and use the parent pivot/transform.position. */
+    public Vector3 GetCenter()
+    {
+        return transform.GetComponent<Renderer>().bounds.center;
+    }
+
     /* Set most of the fields, and things like position, of the player to 
      * default starting values. */
     internal void ResetPlayer()
     {
         //TODO: For two players - This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
-        transform.position = new Vector3(0.0f, 0.5f, 0.0f); 
+
+        transform.position = new Vector3(0.0f, 0.5f, 0.0f);
+        transform.position -= new Vector3(GetCenter().x, 0, GetCenter().z);
+        //transform.parent.position = new Vector3(0.0f, 0.5f, 0.0f);
+        //transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
         mHealth = InitialHealth;
+        BarProgress = mHealth * (1 / InitialHealth);
         mScore = 0;
         mNumberCollisions = 0;
         mRepellentPlayerTimeLeft = 0.0f;

@@ -143,7 +143,7 @@ public class GameManager : MonoBehaviour
 
                 for (int count = 0; count < mEnemies.Count; ++count)
                 {
-                    Vector3 difference = mPlayer.transform.position - mEnemies[count].transform.position;
+                    Vector3 difference = mPlayer.GetCenter() - mEnemies[count].transform.position;
                     
                     if (difference.magnitude <= bombDistance)
                     {

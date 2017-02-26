@@ -13,26 +13,27 @@ public class WrapPosition : MonoBehaviour
 	
 	void Update ()
     {
-        Vector3 position = transform.position;
+        Vector3 pivotPosition = transform.position;
+        Vector3 actualPosition = transform.GetComponent<Renderer>().bounds.center;
 
-        if (position.x < Arena.Width * -0.5f)
+        if (actualPosition.x < Arena.Width * -0.5f)
         {
-            position.x += Arena.Width;
+            pivotPosition.x += Arena.Width;
         }
-        else if (position.x > Arena.Width * 0.5f)
+        else if (actualPosition.x > Arena.Width * 0.5f)
         {
-            position.x -= Arena.Width;
-        }
-
-        if (position.z < Arena.Height * -0.5f)
-        {
-            position.z += Arena.Height;
-        }
-        else if (position.z > Arena.Height * 0.5f)
-        {
-            position.z -= Arena.Height;
+            pivotPosition.x -= Arena.Width;
         }
 
-        transform.position = position;
+        if (actualPosition.z < Arena.Height * -0.5f)
+        {
+            pivotPosition.z += Arena.Height;
+        }
+        else if (actualPosition.z > Arena.Height * 0.5f)
+        {
+            pivotPosition.z -= Arena.Height;
+        }
+
+        transform.position = pivotPosition;
     }
 }
