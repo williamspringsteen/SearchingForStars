@@ -109,6 +109,8 @@ public class Player : MonoBehaviour
     /* Similar to mNextUpdateScore. */
     private float mUseBombCooldown;
 
+    private float mMaxSpeed = 100.0f;
+
     /* These are for displaying the damage bar. */
     public float xEdgeBuffer = 2;
     public float yEdgeBuffer = 1;
@@ -170,6 +172,11 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        if (mBody.velocity.magnitude > mMaxSpeed)
+        {
+            mBody.velocity = mBody.velocity.normalized * mMaxSpeed;
+        }
+
         Vector3 direction = Vector3.zero;
 
         if (Input.GetKey(KeyCode.A))
