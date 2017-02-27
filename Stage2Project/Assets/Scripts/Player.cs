@@ -342,6 +342,9 @@ public class Player : MonoBehaviour
         if (!IsDead())
         {
             mBody.AddForce(direction * Speed * Time.deltaTime);
+
+            Vector3 rotateDirection = Vector3.RotateTowards(transform.forward, -1 * direction, 0.1f, 0.0f);
+            transform.rotation = Quaternion.LookRotation(rotateDirection);
         }
     }
 
@@ -531,6 +534,7 @@ public class Player : MonoBehaviour
 
         transform.position = new Vector3(0.0f, 0.5f, 0.0f);
         transform.position -= new Vector3(GetCenter().x, 0, GetCenter().z);
+        transform.rotation = Quaternion.Euler(0, 0, 0);
         mHealth = InitialHealth;
         BarProgress = mHealth * (1 / InitialHealth);
         mScore = 0;
