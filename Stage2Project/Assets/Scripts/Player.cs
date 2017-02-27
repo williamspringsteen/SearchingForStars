@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-//TODO: Will probably have to change ParticleSystem to be some kind of ring around player, maybe a different asset
-
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(ParticleSystem))]
 public class Player : MonoBehaviour
@@ -32,8 +30,11 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float BombRadius = 30.0f;
 
+    [SerializeField]
+    private GameObject BombPrefab;
+
     /* Time that the repellent and mass repel powerups will repel for. */
-    private float mRepellentPowerupTime = 10.0f;
+    private float mRepellentPowerupTime = 4.0f;
     private float mMassRepelPowerupTime = 0.4f;
 
     /* Number of enemies currently colliding with the player, thus causing the 
@@ -79,11 +80,11 @@ public class Player : MonoBehaviour
 
     /* After the player is hit while they have a shield, they are immune for 
      * this many seconds. */
-    private float mShieldDownImmunityTime = 2.0f; 
+    private float mShieldDownImmunityTime = 2.0f;
 
-    /* The player's shield. mShield.enabled is toggled depending on whether 
-     * the shield should currently be active. */
-    private ParticleSystem.EmissionModule mShield;
+    /* The player's shield. mShield.Play() and mShield.Stop() used to turn the 
+     * shield on and off, respectively. */
+    private ParticleSystem mShield;
 
     /* Number of bombs the player currently has. */
     private int mBombs;
@@ -93,14 +94,17 @@ public class Player : MonoBehaviour
     private float mPickupCooldown = 4.0f;
 
     /* Similar to mNextUpdateScore. */
-    private float mPickupCooldownTimeLeft;    
+    private float mPickupCooldownTimeLeft;
+
+    /* Effect for the bomb, that should be a child of the Player. */
+    private GameObject mBombInstance;
 
     /* True if the user has just pressed the button to use a bomb, and is then 
      * set to false after the bomb has finished being used.  */
     private bool mUseBomb = false;
 
     /* Minimum time a player must wait between using bombs. */
-    private float mUseBombCooldownTime = 1.5f;
+    private float mUseBombCooldownTime = 2.0f;
 
     /* Similar to mNextUpdateScore. */
     private float mUseBombCooldown;
@@ -126,7 +130,7 @@ public class Player : MonoBehaviour
     void Awake()
     {
         mBody = GetComponent<Rigidbody>();
-        mShield = GetComponent<ParticleSystem>().emission;
+        mShield = GetComponent<ParticleSystem>();
         mRepellingToAttracting = new List<MagnetizedByPlayer>();
         mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
@@ -189,6 +193,12 @@ public class Player : MonoBehaviour
         if (mUseBombCooldown > 0.0f)
         {
             mUseBombCooldown -= Time.deltaTime;
+
+            if (mUseBombCooldown <= 0.0f && mBombInstance != null)
+            {
+                Destroy(mBombInstance);
+                mBombInstance = null;
+            }
         }
 
         /* Press this key to fire a bomb. */
@@ -199,6 +209,14 @@ public class Player : MonoBehaviour
                 mUseBomb = true;
                 mBombs--;
                 mUseBombCooldown = mUseBombCooldownTime;
+
+                //Create bomb effect
+                mBombInstance = Instantiate(BombPrefab);
+                mBombInstance.transform.position = GetCenter();
+                ParticleSystem bombEffect = mBombInstance.GetComponentInChildren<ParticleSystem>();
+                ParticleSystem.MainModule bombEffectMain = bombEffect.main;
+                bombEffectMain.startSize = 2.7f * BombRadius;
+                bombEffect.Play();
             }
         }
 
@@ -328,7 +346,7 @@ public class Player : MonoBehaviour
             if (mShieldUp)
             {
                 mShieldUp = false;
-                mShield.enabled = false;
+                mShield.Stop();
                 mShieldImmunityTimeLeft = mShieldDownImmunityTime;
             }
         }
@@ -379,7 +397,10 @@ public class Player : MonoBehaviour
                         break;
                     case PowerupTag.Powerup.Shield:
                         mShieldUp = true;
-                        mShield.enabled = true;
+                        if (!mShield.isPlaying)
+                        {
+                            mShield.Play();
+                        }
                         break;
                     default:
                         break;
@@ -503,8 +524,6 @@ public class Player : MonoBehaviour
 
         transform.position = new Vector3(0.0f, 0.5f, 0.0f);
         transform.position -= new Vector3(GetCenter().x, 0, GetCenter().z);
-        //transform.parent.position = new Vector3(0.0f, 0.5f, 0.0f);
-        //transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
         mHealth = InitialHealth;
         BarProgress = mHealth * (1 / InitialHealth);
         mScore = 0;
@@ -517,8 +536,13 @@ public class Player : MonoBehaviour
         mMassRepelTimeLeft = 0.0f;
         mShieldImmunityTimeLeft = 0.0f;
         mShieldUp = false;
-        mShield.enabled = false;
+        mShield.Stop();
         mBombs = 0;
+        if (mBombInstance != null)
+        {
+            Destroy(mBombInstance);
+            mBombInstance = null;
+        }
         mPickupCooldownTimeLeft = 0.0f;
         mUseBomb = false;
         mUseBombCooldown = 0.0f;

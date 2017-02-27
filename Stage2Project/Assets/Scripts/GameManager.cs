@@ -33,7 +33,6 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private int MaxPowerups;
     
-    //TODO: Split up Collectible and Powerups (Since there is only one collectible, and powerups will disappear, and act a lot differently, so it makes sense)
     private List<GameObject> mEnemies;
     private List<GameObject> mColls;
     private List<GameObject> mPows;
@@ -62,14 +61,14 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if(mState == State.Playing)
+        if(mState == State.Playing && !mPlayer.IsDead())
         {
             /* Stop new enemies spawning while repellent powerup is in effect.
-             * It is multiplied by 1.1f so that a new enemy doesn't just 
+             * It is multiplied by 1.01f so that a new enemy doesn't just 
              * instantly spawn after powerup expires. */
             if (mPlayer.HasJustGotRepellentPowerup())
             {
-                mNextEnemySpawn += mPlayer.GetRepellentPowerupTime() * 1.1f;
+                mNextEnemySpawn += mPlayer.GetRepellentPowerupTime() * 1.01f;
             }
 
             mNextEnemySpawn -= Time.deltaTime;
