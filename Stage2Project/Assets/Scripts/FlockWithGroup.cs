@@ -103,7 +103,6 @@ public class FlockWithGroup : MonoBehaviour
             align /= mCurrentBuddies.Count;
             cohesion /= mCurrentBuddies.Count;
             avoid /= mAvoidBuddiesCount;
-            //avoid /= mCurrentBuddies.Count;
 
             align.Normalize();
             cohesion = cohesion - transform.position;

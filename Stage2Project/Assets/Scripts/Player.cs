@@ -454,8 +454,6 @@ public class Player : MonoBehaviour
         {
             GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "Ship failure.", deadStyle);
         }
-
-        //Maybe_TODO: if (mRepellentPlayerTimeLeft > 0.0f) { display timer below player, based on PowerupTime and current mRepellentPlayerTime } and similar for mass repel
     }
 
     void FillTexture(Texture2D texture, Color32 colour)
@@ -555,7 +553,6 @@ public class Player : MonoBehaviour
             height = -0.5f;
         }
         transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
-        //TODO: For two players - This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
         transform.position = new Vector3(0.0f, height, 0.0f);
         transform.position -= new Vector3(GetCenter().x, 0, GetCenter().z);
         mHealth = InitialHealth;

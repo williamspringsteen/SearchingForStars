@@ -5,18 +5,18 @@ using UnityEngine;
 public class ScreenManager : MonoBehaviour
 {
     public delegate void GameEvent();
-    public static event GameEvent OnNewGame;
     public static event GameEvent OnExitGame;
-    //public static event GameEvent OnViewInstructions;
     public static event GameEvent OnViewLeaderboard;
-    //public static event GameEvent OnChangeSettings;
-    public static event GameEvent OnMainMenu;
+    public static event GameEvent OnChooseShip1;
+    public static event GameEvent OnChooseShip2;
+    public static event GameEvent OnChooseShip3;
+    public static event GameEvent OnChooseShip4;
     public static event GameEvent OnSubmitAndMainMenu;
 
     private float mTimeToSubmit = 0.5f;
     private float mTimeLeftToSubmit;
 
-    public enum Screens { TitleScreen, GameScreen, InstructionsScreen, LeaderboardScreen, SettingsScreen, NumScreens }
+    public enum Screens { TitleScreen, GameScreen, InstructionsScreen, LeaderboardScreen, ShipScreen, NumScreens }
 
     private Canvas [] mScreens;
     private Screens mCurrentScreen;
@@ -49,6 +49,11 @@ public class ScreenManager : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKey("escape"))
+        {
+            Application.Quit();
+        }
+
         if (mTimeLeftToSubmit > 0.0f)
         {
             mTimeLeftToSubmit -= Time.deltaTime;
@@ -62,12 +67,7 @@ public class ScreenManager : MonoBehaviour
 
     public void StartGame()
     {
-        if(OnNewGame != null)
-        {
-            OnNewGame();
-        }
-
-        TransitionTo(Screens.GameScreen);
+        TransitionTo(Screens.ShipScreen);
     }
 
     public void EndGame()
@@ -82,11 +82,6 @@ public class ScreenManager : MonoBehaviour
 
     public void ViewInstructions()
     {
-        /*if (OnViewInstructions != null)
-        {
-            OnViewInstructions();
-        }*/
-
         TransitionTo(Screens.InstructionsScreen);
     }
 
@@ -100,23 +95,48 @@ public class ScreenManager : MonoBehaviour
         TransitionTo(Screens.LeaderboardScreen);
     }
 
-    public void ChangeSettings()
+    public void ChooseShip1()
     {
-        /*if (OnChangeSettings != null)
+        if (OnChooseShip1 != null)
         {
-            OnChangeSettings();
-        }*/
+            OnChooseShip1();
+        }
 
-        TransitionTo(Screens.SettingsScreen);
+        TransitionTo(Screens.GameScreen);
+    }
+
+    public void ChooseShip2()
+    {
+        if (OnChooseShip2 != null)
+        {
+            OnChooseShip2();
+        }
+
+        TransitionTo(Screens.GameScreen);
+    }
+
+    public void ChooseShip3()
+    {
+        if (OnChooseShip3 != null)
+        {
+            OnChooseShip3();
+        }
+
+        TransitionTo(Screens.GameScreen);
+    }
+
+    public void ChooseShip4()
+    {
+        if (OnChooseShip4 != null)
+        {
+            OnChooseShip4();
+        }
+
+        TransitionTo(Screens.GameScreen);
     }
 
     public void MainMenu()
     {
-        if (OnMainMenu != null)
-        {
-            OnMainMenu();
-        }
-
         TransitionTo(Screens.TitleScreen);
     }
 
@@ -128,6 +148,19 @@ public class ScreenManager : MonoBehaviour
         }
 
         mTimeLeftToSubmit = mTimeToSubmit;
+    }
+
+    /* If paused, then resume the game. Otherwise, pause the game. */
+    public void PauseGame()
+    {
+        if (Time.timeScale == 0)
+        {
+            Time.timeScale = 1;
+        }
+        else
+        {
+            Time.timeScale = 0;
+        }
     }
 
     private void TransitionTo(Screens screen)

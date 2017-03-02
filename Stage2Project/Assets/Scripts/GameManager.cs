@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour
     private GameObject[] SpawnPows;
 
     [SerializeField]
-    private Player PlayerPrefab;
+    private Player[] PlayerPrefab;
 
     [SerializeField]
     private Arena Arena;
@@ -48,29 +48,28 @@ public class GameManager : MonoBehaviour
     private Leaderboard mLeaderboard;
     private float mTimeToSubmit = 0.5f;
     private float mTimeLeftToSubmit;
+    private bool mIsPlayerInstantiated;
 
     void Awake()
     {
-        mPlayer = Instantiate(PlayerPrefab);
-        mPlayer.transform.parent = transform;
-
         mLeaderboard = Instantiate(Leaderboard);
         mLeaderboard.enabled = false;
         mTimeLeftToSubmit = 0.0f;
+        mIsPlayerInstantiated = false;
 
-        ScreenManager.OnNewGame += ScreenManager_OnNewGame;
         ScreenManager.OnExitGame += ScreenManager_OnExitGame;
         ScreenManager.OnViewLeaderboard += ScreenManager_OnViewLeaderboard;
-        //ScreenManager.OnViewInstructions += ScreenManager_OnViewInstructions;
-        //SceenManager.OnChangeSettings += ScreenManager_OnChangeSettings;
-        ScreenManager.OnMainMenu += ScreenManager_OnMainMenu;
         ScreenManager.OnSubmitAndMainMenu += ScreenManager_OnSubmitAndMainMenu;
+        ScreenManager.OnChooseShip1 += ScreenManager_OnChooseShip1;
+        ScreenManager.OnChooseShip2 += ScreenManager_OnChooseShip2;
+        ScreenManager.OnChooseShip3 += ScreenManager_OnChooseShip3;
+        ScreenManager.OnChooseShip4 += ScreenManager_OnChooseShip4;
     }
 
     void Start()
     {
         Arena.Calculate();
-        mPlayer.enabled = false;
+        mPlayer = null;
         mState = State.Paused;
     }
 
@@ -194,8 +193,18 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void BeginNewGame()
+    private void BeginNewGame(int playerPrefabIndex)
     {
+        if (mIsPlayerInstantiated)
+        {
+            Destroy(mPlayer);
+            mPlayer = null;
+        }
+
+        mPlayer = Instantiate(PlayerPrefab[playerPrefabIndex]);
+        mPlayer.transform.parent = transform;
+        mIsPlayerInstantiated = true;
+
         if (mEnemies != null)
         {
             for (int count = 0; count < mEnemies.Count; ++count)
@@ -277,7 +286,6 @@ public class GameManager : MonoBehaviour
 
     private void ViewLeaderboard()
     {
-        //EndGame();
         mLeaderboard.DisableSubmission();
         mLeaderboard.enabled = true;
     }
@@ -289,33 +297,34 @@ public class GameManager : MonoBehaviour
 
     private void SubmitAndMainMenu()
     {
-        //TODO: CHANGE ALL MAIN MENU STUFF TO SUBMIT
-        mLeaderboard.SaveScore(mPlayer.GetScore());
+        if (mPlayer != null)
+        {
+            mLeaderboard.SaveScore(mPlayer.GetScore());
+        }
 
         /* Wait a couple seconds before going back to main menu, so that it 
          * has time to submit the score and the user can see the leaderboard 
          * update briefly. */
         mTimeLeftToSubmit = mTimeToSubmit;
-
-        //Suppress the OnGUI stuff, but don't turn .enabled off yet
     }
 
-    private void MainMenu()
+    private void ScreenManager_OnChooseShip1()
     {
-        //TODO: CHANGE ALL MAIN MENU STUFF TO SUBMIT
-        //mLeaderboard.SaveScore(mPlayer.GetScore());
-
-        /* Wait a couple seconds before going back to main menu, so that it 
-         * has time to submit the score and the user can see the leaderboard 
-         * update briefly. */
-        //mTimeLeftToSubmit = mTimeToSubmit;
-
-        //Suppress the OnGUI stuff, but don't turn .enabled off yet
+        BeginNewGame(0);
     }
 
-    private void ScreenManager_OnNewGame()
+    private void ScreenManager_OnChooseShip2()
     {
-        BeginNewGame();
+        BeginNewGame(1);
+    }
+    private void ScreenManager_OnChooseShip3()
+    {
+        BeginNewGame(2);
+    }
+
+    private void ScreenManager_OnChooseShip4()
+    {
+        BeginNewGame(3);
     }
 
     private void ScreenManager_OnExitGame()
@@ -323,24 +332,9 @@ public class GameManager : MonoBehaviour
         EndGame();
     }
 
-    /*private void ScreenManager_OnViewInstructions()
-    {
-        ViewInstructions();
-    }*/
-
     private void ScreenManager_OnViewLeaderboard()
     {
         ViewLeaderboard();
-    }
-
-    /*private void ScreenManager_OnChangeSettings()
-    {
-        ChangeSettings();
-    }*/
-
-    private void ScreenManager_OnMainMenu()
-    {
-        MainMenu();
     }
 
     private void ScreenManager_OnSubmitAndMainMenu()

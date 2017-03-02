@@ -46,8 +46,6 @@ public class Leaderboard : MonoBehaviour, App42CallBack
     {
         App42API.Initialize(mConstants.apiKey, mConstants.secretKey);
         App42API.SetOfflineStorage(true, 20);
-        //ResetLeaderboardLook();
-        //App42Log.SetDebug(true);
     }
 
     internal void SaveScore(int score)
@@ -83,20 +81,29 @@ public class Leaderboard : MonoBehaviour, App42CallBack
 
     void OnGUI()
     {
-        //Will likely have to build all leaderboard boxes and stuff first, before GetTopNRankers
-        //TODO: Change these numbers to be screen independent
-        GUI.Box(new Rect(450, 40, 250, 200), mBoxText);
-        GUI.Label(new Rect(470, 50, 200, 200), mColumnName);
-        GUI.Label(new Rect(470, 70, 200, 200), mSuccess);
-        GUI.Label(new Rect(470, 70, 200, 200), mPlayerRank);
-        GUI.Label(new Rect(540, 70, 200, 200), mPlayerName);
-        GUI.Label(new Rect(620, 70, 200, 200), mPlayerScore);
+        float leaderboardWidth = 250;
+        float leaderboardHeight = 200;
+        float leaderboardX = (Screen.width / 2) - (leaderboardWidth / 2);
+        float leaderboardY = (Screen.height / 2) - (leaderboardHeight / 2);
+
+        GUI.Box(new Rect(leaderboardX, leaderboardY, leaderboardWidth, leaderboardHeight), mBoxText);
+        GUI.Label(new Rect(leaderboardX + 20, leaderboardY + 10, leaderboardWidth - 50, leaderboardHeight), mColumnName);
+        GUI.Label(new Rect(leaderboardX + 20, leaderboardY + 30, leaderboardWidth - 50, leaderboardHeight), mSuccess);
+        GUI.Label(new Rect(leaderboardX + 20, leaderboardY + 30, leaderboardWidth - 50, leaderboardHeight), mPlayerRank);
+        GUI.Label(new Rect(leaderboardX + 90, leaderboardY + 30, leaderboardWidth - 50, leaderboardHeight), mPlayerName);
+        GUI.Label(new Rect(leaderboardX + 170, leaderboardY + 30, leaderboardWidth - 50, leaderboardHeight), mPlayerScore);
 
         if (mCanSubmit)
         {
-            GUI.Label(new Rect(20, 40, 200, 20), "Username");
-            user = GUI.TextField(new Rect(100, 40, 200, 20), user);
+            float usernameWidth = 200;
+            float usernameHeight = 20;
+            float usernameX = ((leaderboardX) / 2) - (usernameWidth / 2);
+            float usernameY = leaderboardY;
+
+            GUI.Label(new Rect(usernameX, usernameY, usernameWidth, usernameHeight), "Username");
+            user = GUI.TextField(new Rect(usernameX + 80, usernameY, usernameWidth, usernameHeight), user);
         }
+
         if (mSave)
         {
             mSave = false;
@@ -110,7 +117,6 @@ public class Leaderboard : MonoBehaviour, App42CallBack
                 mSubmit = true;
             }
         }
-
 
         //This is only accessed once - during OnGUI()'s first call.
         if (!mLeaderboardAccessed)
@@ -181,7 +187,6 @@ public class Leaderboard : MonoBehaviour, App42CallBack
             mBoxText = "Exception Occurred :" + nxtLine +
                 "Game With The Name (" + mConstants.gameName + ")" + nxtLine +
                     " Does Not Exist.";
-            // handle here , If Game Name Does Not Exist.
         }
         else if (appErrorCode == 3013)
         {
@@ -189,7 +194,6 @@ public class Leaderboard : MonoBehaviour, App42CallBack
                 "Scores For The Game," + nxtLine +
                     "With The Name (" + mConstants.gameName + ")" + nxtLine +
                     " Does Not Exist.";
-            // handle here , if no scores found for the given gameName.
         }
         else if (appErrorCode == 1401)
         {
@@ -198,14 +202,12 @@ public class Leaderboard : MonoBehaviour, App42CallBack
                     "Please Verify Your" + nxtLine +
                     "API_KEY & SECRET_KEY" + nxtLine +
                     "From AppHq.";
-            // handle here for Client is not authorized
         }
         else if (appErrorCode == 1500)
         {
             mBoxText = "Exception Occurred :" + nxtLine +
                 "WE ARE SORRY !!" + nxtLine +
                     "But Somthing Went Wrong.";
-            // handle here for Internal Server Error
         }
         else {
             mBoxText = "Exception Occurred :" + exception;
