@@ -30,8 +30,13 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float BombRadius = 30.0f;
 
+    /* Effect for the bomb. */
     [SerializeField]
     private GameObject BombPrefab;
+
+    /* Font to use for all text displayed when playing. */
+    [SerializeField]
+    private Font GUIFont;
 
     /* Time that the repellent and mass repel powerups will repel for. */
     private float mRepellentPowerupTime = 4.0f;
@@ -91,7 +96,7 @@ public class Player : MonoBehaviour
 
     /* Minimum time a player must wait between using obtaining pickups, such as
      * bombs. (Currently, bombs are the only powerups considered a pickup) */
-    private float mPickupCooldown = 4.0f;
+    private float mPickupCooldown = 3.0f;
 
     /* Similar to mNextUpdateScore. */
     private float mPickupCooldownTimeLeft;
@@ -109,6 +114,7 @@ public class Player : MonoBehaviour
     /* Similar to mNextUpdateScore. */
     private float mUseBombCooldown;
 
+    /* Stops the player from accelerating indefinitely. */
     private float mMaxSpeed = 100.0f;
 
     /* These are for displaying the damage bar. */
@@ -137,7 +143,7 @@ public class Player : MonoBehaviour
         mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
         /* Set most of the fields of the player to default values. */
-        ResetPlayer();
+        ResetPlayer(false);
 
         BarPos = new Vector2(Screen.width / 6, yEdgeBuffer);
         BarSize = new Vector2(BarWidth, BarHeight);
@@ -166,7 +172,7 @@ public class Player : MonoBehaviour
         bombStyle.alignment = TextAnchor.UpperRight;
 
         deadStyle.alignment = TextAnchor.MiddleCenter;
-        deadStyle.fontSize = 30;
+        deadStyle.fontSize = 160;
         deadStyle.normal.textColor = Color.white;
     }
 
@@ -267,7 +273,7 @@ public class Player : MonoBehaviour
                         {
                             if (repellentPlayer)
                             {
-                                individual.MakeRepelling();
+                                individual.MakeRepelling(false);
                                 mRepellingToAttracting.Add(individual);
                             }
                             else if (massRepelling)
@@ -275,7 +281,7 @@ public class Player : MonoBehaviour
                                 Vector3 difference = individual.transform.position - GetCenter();
                                 if (difference.magnitude <= MassRepelDistance)
                                 {
-                                    individual.MakeRepelling();
+                                    individual.MakeRepelling(true);
                                     individual.SetMassRepelForce();
                                     individual.SetMassRepelDistance();
                                     mMassRepelEnemies.Add(individual);
@@ -343,7 +349,10 @@ public class Player : MonoBehaviour
         {
             mBody.AddForce(direction * Speed * Time.deltaTime);
 
-            Vector3 rotateDirection = Vector3.RotateTowards(transform.forward, -1 * direction, 0.1f, 0.0f);
+            /* Increase the 3rd parameter of RotateTowards to increase the 
+             * speed at which the player turns. It is important to get this 
+             * right. */
+            Vector3 rotateDirection = Vector3.RotateTowards(transform.forward, -0.1f * direction, 2 * Time.deltaTime, 0.0f);
             transform.rotation = Quaternion.LookRotation(rotateDirection);
         }
     }
@@ -414,7 +423,6 @@ public class Player : MonoBehaviour
                         break;
                     default:
                         break;
-
                 }
             }
         }
@@ -422,6 +430,8 @@ public class Player : MonoBehaviour
 
     void OnGUI()
     {
+        GUI.skin.font = GUIFont;
+
         GUI.BeginGroup(new Rect(xEdgeBuffer, yEdgeBuffer, BarPos.x - (2 * xEdgeBuffer), BarHeight - (2*yEdgeBuffer)));
             GUI.Label(new Rect(0, 0, BarPos.x - (2 * xEdgeBuffer), BarHeight - (2 * yEdgeBuffer)), "Damage: ", damageStyle);
         GUI.EndGroup();
@@ -463,6 +473,11 @@ public class Player : MonoBehaviour
     internal bool IsDead()
     {
         return mHealth <= 0;
+    }
+
+    internal int GetScore()
+    {
+        return mScore;
     }
 
     internal bool HasJustGotRepellentPowerup()
@@ -528,13 +543,21 @@ public class Player : MonoBehaviour
 
     /* Set most of the fields, and things like position, of the player to 
      * default starting values. */
-    internal void ResetPlayer()
+    internal void ResetPlayer(bool startingGame)
     {
+        float height;
+        if (startingGame)
+        {
+            height = 0.5f;
+        }
+        else
+        {
+            height = -0.5f;
+        }
+        transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
         //TODO: For two players - This may be tricker to change when there are multiple players, like each player will have to store what number player they are and so can work out where they spawn
-
-        transform.position = new Vector3(0.0f, 0.5f, 0.0f);
+        transform.position = new Vector3(0.0f, height, 0.0f);
         transform.position -= new Vector3(GetCenter().x, 0, GetCenter().z);
-        transform.rotation = Quaternion.Euler(0, 0, 0);
         mHealth = InitialHealth;
         BarProgress = mHealth * (1 / InitialHealth);
         mScore = 0;

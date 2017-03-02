@@ -1,0 +1,56 @@
+Proper powerups - make them look like a landing pad, so it is clearer that they stay
+
+Simple design for logo - DONE
+
+Better buttons for main menu and begin game
+
+Make background a little more space-like
+
+Cool title screen
+
+Put all materials etc used in imported assets into project / leave them in their folders and delete all unused stuff
+
+PRACTICE PUTTING IT ON ITCH.IO???
+
+Engine particles for player
+
+Make sure game is well-balanced - also ask people what they think of these controls (thinking of asking olly, nathan, luke, uni guys), and potentially changing it to turning with A and D, and moving forward/backward with W and S. ALSO think about adding a 3rd enemy, I'm thinking ones that flock together and will always chase you slowly (the flocking may not be useful, or maybe just make sure that the attraction to the player is slightly more powerful than the flocking) - Don't think I need to now
+
+Pause menu
+
+Choose ship
+
+Leaderboard
+
+Settings (including difficulity, changing ship again, and accessibility), accessible from main menu and pause menu
+
+Achievements (put in same place as leaderboard maybe)
+
+Sounds - background music, bomb, button clicks, maybe hitting noise and player engine noise (make user able to toggle from settings)
+
+Bosses / Game gets harder as time goes on
+
+Timer above the powerups/player while they are on a cooldown (so when player is repellent, when bomb has been 
+used, and time until you can next get a bomb/mass repel powerup) + Shield immunity can flicker the player
+
+MULTIPLAYER AND PUT A BUNCH OF PLAYER.CS CODE INTO GAMEMANAGER.CS
+
+
+
+
+
+MAKE SURE GAME IS BALANCED - SPEED OF ENEMIES, FREQUENCY OF ALL SPAWNS, LENGTH POWERUPS LAST/COOLDOWN TIMES
+
+Only things I absolutely need to do are get the powerups looking good, complete the instructions page (get WASD image, get background off images on it already, get image of bomb effect, get images of all powerups, put all of these images in with text), get rid of leaderboard temporarily, and get a version working on itch.io.
+
+Then I would really love to get a leaderboard working, where it only appears when you click on the leaderboard button, you can enter your username, you can see top 20 (or all, if possible), and your score gets passed from previous main game page so that it can be sumbitted.
+
+Then I would like to be able to press escape to pause the game and say PAUSED - PRESS ESC TO RESUME.
+
+Then I would like to be able to choose ship at start of game (this should be easy, just want the 4 pictures of ships to come up, and then you click one, and this chooses the index of PlayerPrefabs to use for mPlayer.
+
+Slightly better looking background and buttons???
+
+Then I would like to get settings done - just basic things like difficulty to reduce ship speed or increase enemy speed or increase enemy spawn frequency, brightness, other easy accessibility options.
+
+Put a sign saying 'Multiplayer coming soon' maybe

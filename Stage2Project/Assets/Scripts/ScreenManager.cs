@@ -7,8 +7,12 @@ public class ScreenManager : MonoBehaviour
     public delegate void GameEvent();
     public static event GameEvent OnNewGame;
     public static event GameEvent OnExitGame;
+    //public static event GameEvent OnViewInstructions;
+    public static event GameEvent OnViewLeaderboard;
+    //public static event GameEvent OnChangeSettings;
+    public static event GameEvent OnMainMenu;
 
-    public enum Screens { TitleScreen, GameScreen, ResultScreen, NumScreens }
+    public enum Screens { TitleScreen, GameScreen, InstructionsScreen, LeaderboardScreen, SettingsScreen, NumScreens }
 
     private Canvas [] mScreens;
     private Screens mCurrentScreen;
@@ -52,6 +56,46 @@ public class ScreenManager : MonoBehaviour
         if (OnExitGame != null)
         {
             OnExitGame();
+        }
+
+        TransitionTo(Screens.TitleScreen);
+    }
+
+    public void ViewInstructions()
+    {
+        /*if (OnViewInstructions != null)
+        {
+            OnViewInstructions();
+        }*/
+
+        TransitionTo(Screens.InstructionsScreen);
+    }
+
+    public void ViewLeaderboard()
+    {
+        if (OnViewLeaderboard != null)
+        {
+            OnViewLeaderboard();
+        }
+
+        TransitionTo(Screens.LeaderboardScreen);
+    }
+
+    public void ChangeSettings()
+    {
+        /*if (OnChangeSettings != null)
+        {
+            OnChangeSettings();
+        }*/
+
+        TransitionTo(Screens.SettingsScreen);
+    }
+
+    public void MainMenu()
+    {
+        if (OnMainMenu != null)
+        {
+            OnMainMenu();
         }
 
         TransitionTo(Screens.TitleScreen);

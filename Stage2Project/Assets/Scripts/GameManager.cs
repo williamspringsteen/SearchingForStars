@@ -32,6 +32,9 @@ public class GameManager : MonoBehaviour
 
     [SerializeField]
     private int MaxPowerups;
+
+    [SerializeField]
+    private Leaderboard Leaderboard;
     
     private List<GameObject> mEnemies;
     private List<GameObject> mColls;
@@ -42,14 +45,22 @@ public class GameManager : MonoBehaviour
     private float mNextCollSpawn;
     private float mNextPowSpawn;
     private int mNumPowerups;
+    private Leaderboard mLeaderboard;
 
     void Awake()
     {
         mPlayer = Instantiate(PlayerPrefab);
         mPlayer.transform.parent = transform;
 
+        mLeaderboard = Instantiate(Leaderboard);
+        mLeaderboard.enabled = false;
+
         ScreenManager.OnNewGame += ScreenManager_OnNewGame;
         ScreenManager.OnExitGame += ScreenManager_OnExitGame;
+        ScreenManager.OnViewLeaderboard += ScreenManager_OnViewLeaderboard;
+        //ScreenManager.OnViewInstructions += ScreenManager_OnViewInstructions;
+        //SceenManager.OnChangeSettings += ScreenManager_OnChangeSettings;
+        ScreenManager.OnMainMenu += ScreenManager_OnMainMenu;
     }
 
     void Start()
@@ -201,7 +212,7 @@ public class GameManager : MonoBehaviour
         mNextCollSpawn = TimeBetweenCollSpawns;
         mNextPowSpawn = TimeBetweenPowSpawns;
         mNumPowerups = 0;
-        mPlayer.ResetPlayer();
+        mPlayer.ResetPlayer(true);
         mPlayer.enabled = true;
         mState = State.Playing;
     }
@@ -238,7 +249,31 @@ public class GameManager : MonoBehaviour
             mPows.Clear();
         }
 
-        mPlayer.ResetPlayer();
+        mPlayer.ResetPlayer(false);
+    }
+
+    /*private void ViewInstructions()
+    {
+
+    }*/
+
+    private void ViewLeaderboard()
+    {
+        EndGame();
+        mLeaderboard.enabled = true;
+    }
+
+    /*private void ChangeSettings()
+    {
+
+    }*/
+
+    private void MainMenu()
+    {
+        //CHANGE ALL MAIN MENU STUFF TO SUBMIT
+
+        //mLeaderboard.SubmitScore(mPlayer.GetScore());
+        mLeaderboard.enabled = false;
     }
 
     private void ScreenManager_OnNewGame()
@@ -249,6 +284,26 @@ public class GameManager : MonoBehaviour
     private void ScreenManager_OnExitGame()
     {
         EndGame();
+    }
+
+    /*private void ScreenManager_OnViewInstructions()
+    {
+        ViewInstructions();
+    }*/
+
+    private void ScreenManager_OnViewLeaderboard()
+    {
+        ViewLeaderboard();
+    }
+
+    /*private void ScreenManager_OnChangeSettings()
+    {
+        ChangeSettings();
+    }*/
+
+    private void ScreenManager_OnMainMenu()
+    {
+        MainMenu();
     }
 
     internal void DelayEnemies(float delayTime)

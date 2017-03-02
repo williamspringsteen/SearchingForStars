@@ -63,9 +63,12 @@ public class MagnetizedByPlayer : MonoBehaviour
         }
     }
 
-    internal void MakeRepelling()
+    internal void MakeRepelling(bool zero)
     {
-        mBody.velocity = Vector3.zero;
+        if (zero)
+        {
+            mBody.velocity = Vector3.zero;
+        }
         MagnetizeType = Type.Repel;
     }
 
