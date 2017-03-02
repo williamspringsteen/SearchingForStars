@@ -42,7 +42,6 @@ public class MagnetizedByPlayer : MonoBehaviour
     {
         if( mPlayer != null)
         {
-            //Vector3 difference = MagnetizeType == Type.Repel ? transform.position - mPlayer.transform.position : mPlayer.transform.position - transform.position;
             Vector3 difference = MagnetizeType == Type.Repel ? transform.position - mPlayer.GetCenter() : mPlayer.GetCenter() - transform.position;
             if ( difference.magnitude <= MinimumDistance )
             {
