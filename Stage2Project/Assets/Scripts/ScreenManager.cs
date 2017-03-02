@@ -11,6 +11,10 @@ public class ScreenManager : MonoBehaviour
     public static event GameEvent OnViewLeaderboard;
     //public static event GameEvent OnChangeSettings;
     public static event GameEvent OnMainMenu;
+    public static event GameEvent OnSubmitAndMainMenu;
+
+    private float mTimeToSubmit = 0.5f;
+    private float mTimeLeftToSubmit;
 
     public enum Screens { TitleScreen, GameScreen, InstructionsScreen, LeaderboardScreen, SettingsScreen, NumScreens }
 
@@ -39,6 +43,21 @@ public class ScreenManager : MonoBehaviour
         }
 
         mCurrentScreen = Screens.TitleScreen;
+
+        mTimeLeftToSubmit = 0.0f;
+    }
+
+    void Update()
+    {
+        if (mTimeLeftToSubmit > 0.0f)
+        {
+            mTimeLeftToSubmit -= Time.deltaTime;
+
+            if (mTimeLeftToSubmit <= 0.0f)
+            {
+                TransitionTo(Screens.TitleScreen);
+            }
+        }
     }
 
     public void StartGame()
@@ -58,7 +77,7 @@ public class ScreenManager : MonoBehaviour
             OnExitGame();
         }
 
-        TransitionTo(Screens.TitleScreen);
+        TransitionTo(Screens.LeaderboardScreen);
     }
 
     public void ViewInstructions()
@@ -101,10 +120,21 @@ public class ScreenManager : MonoBehaviour
         TransitionTo(Screens.TitleScreen);
     }
 
+    public void SubmitAndMainMenu()
+    {
+        if (OnSubmitAndMainMenu != null)
+        {
+            OnSubmitAndMainMenu();
+        }
+
+        mTimeLeftToSubmit = mTimeToSubmit;
+    }
+
     private void TransitionTo(Screens screen)
     {
         mScreens[(int)mCurrentScreen].enabled = false;
         mScreens[(int)screen].enabled = true;
         mCurrentScreen = screen;
     }
+
 }

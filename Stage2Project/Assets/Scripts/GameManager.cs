@@ -46,6 +46,8 @@ public class GameManager : MonoBehaviour
     private float mNextPowSpawn;
     private int mNumPowerups;
     private Leaderboard mLeaderboard;
+    private float mTimeToSubmit = 0.5f;
+    private float mTimeLeftToSubmit;
 
     void Awake()
     {
@@ -54,6 +56,7 @@ public class GameManager : MonoBehaviour
 
         mLeaderboard = Instantiate(Leaderboard);
         mLeaderboard.enabled = false;
+        mTimeLeftToSubmit = 0.0f;
 
         ScreenManager.OnNewGame += ScreenManager_OnNewGame;
         ScreenManager.OnExitGame += ScreenManager_OnExitGame;
@@ -61,6 +64,7 @@ public class GameManager : MonoBehaviour
         //ScreenManager.OnViewInstructions += ScreenManager_OnViewInstructions;
         //SceenManager.OnChangeSettings += ScreenManager_OnChangeSettings;
         ScreenManager.OnMainMenu += ScreenManager_OnMainMenu;
+        ScreenManager.OnSubmitAndMainMenu += ScreenManager_OnSubmitAndMainMenu;
     }
 
     void Start()
@@ -72,6 +76,17 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        if (mTimeLeftToSubmit > 0.0f)
+        {
+            mTimeLeftToSubmit -= Time.deltaTime;
+
+            if (mTimeLeftToSubmit <= 0.0f)
+            {
+                mLeaderboard.enabled = false;
+                mLeaderboard.ResetLeaderboardLook();
+            }
+        }
+
         if(mState == State.Playing && !mPlayer.IsDead())
         {
             /* Stop new enemies spawning while repellent powerup is in effect.
@@ -212,7 +227,7 @@ public class GameManager : MonoBehaviour
         mNextCollSpawn = TimeBetweenCollSpawns;
         mNextPowSpawn = TimeBetweenPowSpawns;
         mNumPowerups = 0;
-        mPlayer.ResetPlayer(true);
+        mPlayer.ResetPlayer(true, false);
         mPlayer.enabled = true;
         mState = State.Playing;
     }
@@ -249,7 +264,10 @@ public class GameManager : MonoBehaviour
             mPows.Clear();
         }
 
-        mPlayer.ResetPlayer(false);
+        mPlayer.ResetPlayer(false, true);
+
+        mLeaderboard.EnableSubmission();
+        mLeaderboard.enabled = true;
     }
 
     /*private void ViewInstructions()
@@ -259,7 +277,8 @@ public class GameManager : MonoBehaviour
 
     private void ViewLeaderboard()
     {
-        EndGame();
+        //EndGame();
+        mLeaderboard.DisableSubmission();
         mLeaderboard.enabled = true;
     }
 
@@ -268,12 +287,30 @@ public class GameManager : MonoBehaviour
 
     }*/
 
+    private void SubmitAndMainMenu()
+    {
+        //TODO: CHANGE ALL MAIN MENU STUFF TO SUBMIT
+        mLeaderboard.SaveScore(mPlayer.GetScore());
+
+        /* Wait a couple seconds before going back to main menu, so that it 
+         * has time to submit the score and the user can see the leaderboard 
+         * update briefly. */
+        mTimeLeftToSubmit = mTimeToSubmit;
+
+        //Suppress the OnGUI stuff, but don't turn .enabled off yet
+    }
+
     private void MainMenu()
     {
-        //CHANGE ALL MAIN MENU STUFF TO SUBMIT
+        //TODO: CHANGE ALL MAIN MENU STUFF TO SUBMIT
+        //mLeaderboard.SaveScore(mPlayer.GetScore());
 
-        //mLeaderboard.SubmitScore(mPlayer.GetScore());
-        mLeaderboard.enabled = false;
+        /* Wait a couple seconds before going back to main menu, so that it 
+         * has time to submit the score and the user can see the leaderboard 
+         * update briefly. */
+        //mTimeLeftToSubmit = mTimeToSubmit;
+
+        //Suppress the OnGUI stuff, but don't turn .enabled off yet
     }
 
     private void ScreenManager_OnNewGame()
@@ -304,6 +341,11 @@ public class GameManager : MonoBehaviour
     private void ScreenManager_OnMainMenu()
     {
         MainMenu();
+    }
+
+    private void ScreenManager_OnSubmitAndMainMenu()
+    {
+        SubmitAndMainMenu();
     }
 
     internal void DelayEnemies(float delayTime)

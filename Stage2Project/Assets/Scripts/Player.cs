@@ -143,7 +143,7 @@ public class Player : MonoBehaviour
         mMassRepelEnemies = new List<MagnetizedByPlayer>();
 
         /* Set most of the fields of the player to default values. */
-        ResetPlayer(false);
+        ResetPlayer(false, false);
 
         BarPos = new Vector2(Screen.width / 6, yEdgeBuffer);
         BarSize = new Vector2(BarWidth, BarHeight);
@@ -543,7 +543,7 @@ public class Player : MonoBehaviour
 
     /* Set most of the fields, and things like position, of the player to 
      * default starting values. */
-    internal void ResetPlayer(bool startingGame)
+    internal void ResetPlayer(bool startingGame, bool keepScore)
     {
         float height;
         if (startingGame)
@@ -560,7 +560,12 @@ public class Player : MonoBehaviour
         transform.position -= new Vector3(GetCenter().x, 0, GetCenter().z);
         mHealth = InitialHealth;
         BarProgress = mHealth * (1 / InitialHealth);
-        mScore = 0;
+
+        if (!keepScore)
+        {
+            mScore = 0;
+        }
+
         mNumberCollisions = 0;
         mRepellentPlayerTimeLeft = 0.0f;
         mRepellingToAttracting.Clear();
