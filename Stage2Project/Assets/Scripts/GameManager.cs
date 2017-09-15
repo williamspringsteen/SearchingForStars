@@ -10,6 +10,9 @@ public class GameManager : MonoBehaviour
     private GameObject [] SpawnEnemies;
 
     [SerializeField]
+    private GameObject [] SpawnBosses;
+
+    [SerializeField]
     private GameObject[] SpawnColls;
 
     [SerializeField]
@@ -37,6 +40,7 @@ public class GameManager : MonoBehaviour
     private Leaderboard Leaderboard;
     
     private List<GameObject> mEnemies;
+    private List<GameObject> mBosses;
     private List<GameObject> mColls;
     private List<GameObject> mPows;
     private Player mPlayer;
@@ -49,6 +53,7 @@ public class GameManager : MonoBehaviour
     private float mTimeToSubmit = 0.5f;
     private float mTimeLeftToSubmit;
     private bool mIsPlayerInstantiated;
+    private int mBossesSpawned;
 
     void Awake()
     {
@@ -56,6 +61,7 @@ public class GameManager : MonoBehaviour
         mLeaderboard.enabled = false;
         mTimeLeftToSubmit = 0.0f;
         mIsPlayerInstantiated = false;
+        mBossesSpawned = 0;
 
         ScreenManager.OnExitGame += ScreenManager_OnExitGame;
         ScreenManager.OnViewLeaderboard += ScreenManager_OnViewLeaderboard;
@@ -88,6 +94,32 @@ public class GameManager : MonoBehaviour
 
         if(mState == State.Playing && !mPlayer.IsDead())
         {
+
+            if (mPlayer.GetScore() >= ((mBossesSpawned + 1) * 500))
+            {
+                if (mBosses == null)
+                {
+                    mBosses = new List<GameObject>();
+                }
+
+                int indexToSpawnBoss;
+                if (mBossesSpawned >= SpawnBosses.Length)
+                {
+                    indexToSpawnBoss = SpawnBosses.Length - 1;
+                }
+                else
+                {
+                    indexToSpawnBoss = mBossesSpawned;
+                }
+
+                print("Spawning Boss Number " + indexToSpawnBoss);
+                GameObject spawnBoss = SpawnBosses[indexToSpawnBoss];
+                GameObject spawnedBossInstance = Instantiate(spawnBoss);
+                spawnedBossInstance.transform.parent = transform;
+                mBosses.Add(spawnedBossInstance);
+                mBossesSpawned++;
+            }
+
             /* Stop new enemies spawning while repellent powerup is in effect.
              * It is multiplied by 1.01f so that a new enemy doesn't just 
              * instantly spawn after powerup expires. */
@@ -159,33 +191,67 @@ public class GameManager : MonoBehaviour
                 mNumPowerups++;
             }
 
-            if (mPlayer.UsingBomb() && mEnemies != null)
+            if (mPlayer.UsingBomb() && ((mEnemies != null) || (mBosses != null)))
             {
                 List<int> enemyIndicesToRemove = new List<int>();
+                List<int> bossIndicesToRemove = new List<int>();
 
                 float bombDistance = mPlayer.GetBombRadius();
 
-                for (int count = 0; count < mEnemies.Count; ++count)
+                if (mEnemies != null)
                 {
-                    Vector3 difference = mPlayer.GetCenter() - mEnemies[count].transform.position;
-                    
-                    if (difference.magnitude <= bombDistance)
+
+                    for (int count = 0; count < mEnemies.Count; ++count)
                     {
-                        enemyIndicesToRemove.Add(count);
+                        Vector3 difference = mPlayer.GetCenter() - mEnemies[count].transform.position;
+
+                        if (difference.magnitude <= bombDistance)
+                        {
+                            enemyIndicesToRemove.Add(count);
+                        }
                     }
+
+                    for (int i = 0; i < enemyIndicesToRemove.Count; ++i)
+                    {
+                        int index = enemyIndicesToRemove[i];
+                        GameObject enemy = mEnemies[index - i];
+                        mEnemies.Remove(enemy);
+                        FlockWithGroup flockComp = enemy.GetComponent<FlockWithGroup>();
+                        if (flockComp != null)
+                        {
+                            flockComp.UpdateBuddyList();
+                        }
+                        Destroy(enemy);
+                    }
+
                 }
 
-                for (int i = 0; i < enemyIndicesToRemove.Count; ++i)
+                if (mBosses != null)
                 {
-                    int index = enemyIndicesToRemove[i];
-                    GameObject enemy = mEnemies[index - i];
-                    mEnemies.Remove(enemy);
-                    FlockWithGroup flockComp = enemy.GetComponent<FlockWithGroup>();
-                    if (flockComp != null)
+
+                    for (int count = 0; count < mBosses.Count; ++count)
                     {
-                        flockComp.UpdateBuddyList();
+                        Vector3 difference = mPlayer.GetCenter() - mBosses[count].transform.position;
+
+                        if (difference.magnitude <= bombDistance)
+                        {
+                            bossIndicesToRemove.Add(count);
+                        }
                     }
-                    Destroy(enemy);
+
+                    for (int i = 0; i < bossIndicesToRemove.Count; ++i)
+                    {
+                        int index = bossIndicesToRemove[i];
+                        GameObject boss = mBosses[index - i];
+                        mBosses.Remove(boss);
+                        FlockWithGroup flockComp = boss.GetComponent<FlockWithGroup>();
+                        if (flockComp != null)
+                        {
+                            flockComp.UpdateBuddyList();
+                        }
+                        Destroy(boss);
+                    }
+
                 }
 
                 mPlayer.UsedBomb();
@@ -214,6 +280,15 @@ public class GameManager : MonoBehaviour
             mEnemies.Clear();
         }
 
+        if (mBosses != null)
+        {
+            for (int count = 0; count < mBosses.Count; ++count)
+            {
+                Destroy(mBosses[count]);
+            }
+            mBosses.Clear();
+        }
+
         if (mColls != null)
         {
             for (int count = 0; count < mColls.Count; ++count)
@@ -239,6 +314,7 @@ public class GameManager : MonoBehaviour
         mPlayer.ResetPlayer(true, false);
         mPlayer.enabled = true;
         mState = State.Playing;
+        mBossesSpawned = 0;
     }
 
     private void EndGame()
@@ -253,6 +329,15 @@ public class GameManager : MonoBehaviour
                 Destroy(mEnemies[count]);
             }
             mEnemies.Clear();
+        }
+
+        if (mBosses != null)
+        {
+            for (int count = 0; count < mBosses.Count; ++count)
+            {
+                Destroy(mBosses[count]);
+            }
+            mBosses.Clear();
         }
 
         if (mColls != null)
